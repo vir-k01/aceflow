@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ACE_jobflow"
+version = "0.0.1"
+dependencies = [
+  "pymatgen==2024.3.1",
+  "pandas",
+  "jobflow",
+]
+requires-python = ">=3.8"
+authors = [
+  {name = "Vir Karan", email = "virkaran@berkeley.edu"},
+]
+description = "Jobflow wrapper for pacemaker"
+readme = "README.md"
