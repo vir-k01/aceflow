@@ -1,8 +1,10 @@
 
 
 
-def write_input(num_basis=700, cutoff=7, loss_weight=0.9, max_steps=2000, batch_size=200, gpu_index=None):
+def write_input(num_basis=700, cutoff=7, loss_weight=0.9, max_steps=2000, batch_size=200, gpu_index=None, reference_energy_dict: dict = None):
     gpu_index_str = 'None' if gpu_index is None else str(gpu_index)
+    if reference_energy_dict is None:
+        reference_energy_dict = {'Ba': -4.44847687, 'Ti': -4.44848340, 'O': -4.44847511}
     content = f"""
 cutoff: {cutoff} # cutoff for neighbour list construction
 seed: 42  # random seed
@@ -51,7 +53,7 @@ data:
   filename: data.pckl.gzip       # force to read reference pickled dataframe from given file
   test_size: 0.1
   #  aug_factor: 1e-4 # common prefactor for weights of augmented structures
-  reference_energy: {{Ba: -4.44847687, Ti: -4.44848340, O: -4.44847511}}
+  reference_energy: {reference_energy_dict}
 
 #################################################################
 ## Fit specification section
