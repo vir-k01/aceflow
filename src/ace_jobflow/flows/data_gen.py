@@ -5,7 +5,7 @@ from jobflow import Flow
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.structure_gen import get_random_packed
-from atomate2.forcefield.jobs.md import PyACEMDMaker
+from atomate2.forcefields.jobs.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 
 

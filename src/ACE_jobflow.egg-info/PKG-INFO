@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: ACE_jobflow
+Version: 0.0.1
+Summary: Jobflow wrapper for pacemaker
+Author-email: Vir Karan <virkaran@berkeley.edu>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pymatgen==2024.3.1
+Requires-Dist: pandas
+Requires-Dist: jobflow
+
+# ACE_jobflow
+TBD
