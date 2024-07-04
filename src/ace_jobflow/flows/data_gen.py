@@ -9,7 +9,7 @@ from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 
 
-def data_gen_flow(compositions: List | None, num_points: int = 5, temperature: float = 2000):
+def data_gen_flow(compositions: list, num_points: int = 5, temperature: float = 2000):
     with MPRester() as mpr:
         entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, 0)})
     
