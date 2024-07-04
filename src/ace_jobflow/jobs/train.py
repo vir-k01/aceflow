@@ -10,4 +10,4 @@ def naive_train_ACE(computed_data_set = None, pre_computed_dataset : pd.DataFram
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
     subprocess.run("pacemaker input.yaml", shell=True)
-    subprocess.run("pace_activeset -d fitting_data_info.pckl.gzip output_potential.yaml")
+    #subprocess.run("pace_activeset -d fitting_data_info.pckl.gzip output_potential.yaml")
