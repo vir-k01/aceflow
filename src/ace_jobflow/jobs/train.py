@@ -3,21 +3,42 @@ import pandas as pd
 import subprocess
 from ..utils.util import write_input
 import os
+import yaml
 
 @job
-def naive_train_ACE(computed_data_set = None, pre_computed_dataset : pd.DataFrame = None, num_basis : int = 10, cutoff : int = 7, loss_weight : float = 0.9, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None, prev_dir: str = None) -> str:
-    computed_data_set = pd.DataFrame.from_dict(computed_data_set)
-    data_set = pd.concat([computed_data_set, pre_computed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
-    write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
+def naive_train_ACE(computed_data_set : dict = None, num_basis : int = 10, cutoff : int = 7, loss_weight : float = 0.9, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None, prev_run_dict: dict = None) -> str:
+    data_set = pd.DataFrame.from_dict(computed_data_set)
+    #data_set = pd.concat([computed_data_set, precomputed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
-    if prev_dir is not None:
+    if prev_run_dict is not None:
         #data_set.to_pickle(prev_dir + "/data.pckl.gzip", compression='gzip', protocol=4)
-        try:
-            subprocess.run("cp " + prev_dir + "/output_potential.yaml ./continue.yaml", shell=True)
-        except:
-            subprocess.run("cp " + prev_dir + "/interim_potential_0.yaml ./continue.yaml", shell=True)
+        prev_dir = prev_run_dict['dir_name']
+        potential = prev_run_dict['potential']
+        prev_run_status = prev_run_dict['status']
+        with open("continue.yaml", 'w') as f:
+            yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
+        #if prev_run_status == 'complete':
+        write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
         subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)
+        #else:
+        #    naive_train_ACE(computed_data_set, num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index, prev_run_dict)
+        #    write_input(num_basis, cutoff, loss_weight, batch_size, gpu_index, max_steps=100)
+        #    subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)e)
     else:
         subprocess.run("pacemaker input.yaml", shell=True)
         #subprocess.run("pace_activeset -d fitting_data_info.pckl.gzip output_potential.yaml")
     return os.getcwd()
+
+@job
+def check_training_output(prev_run_dir: str) -> dict:
+    output_dict = {}
+    if os.path.isfile(prev_run_dir + '/output_potential.yaml'):
+        output_dict.update({'status': 'complete'})
+        with open(prev_run_dir + '/output_potential.yaml', 'r') as f:
+            output = yaml.load(f, Loader=yaml.FullLoader)
+    else:
+        output_dict.update({'status': 'incomplete'})
+        with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
+            output = yaml.load(f, Loader=yaml.FullLoader)
+    output_dict.update({'potential': output, 'dir_name': prev_run_dir})
+    return output_dict
