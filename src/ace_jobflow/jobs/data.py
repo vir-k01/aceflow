@@ -4,14 +4,16 @@ from pymatgen.io.ase import AseAtomsAdaptor
 import pandas as pd
 
 @job
-def read_outputs(md_outputs: List, precomputed_dataset: pd.DataFrame = None, step_skip: int= 1):
+def read_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = None, step_skip: int= 1):
     energies = []
     forces = []
     structures = []
+    if precomputed_dataset:
+        energies = precomputed_dataset['energy']
+        forces = precomputed_dataset['forces']
+        structures = precomputed_dataset['ase_atoms']
     output = {}
-    if md_outputs is None:
-        output = {"energy": precomputed_dataset['energy'], "forces": precomputed_dataset['forces'], "ase_atoms": precomputed_dataset['ase_atoms'], "energy_corrected": precomputed_dataset['energy_corrected']}
-    else:
+    if md_outputs:
         for md_output in md_outputs:
             #trajectory = md_output.vasp_objects['trajectory']
             trajectory = md_output.forcefield_objects['trajectory']
@@ -19,10 +21,10 @@ def read_outputs(md_outputs: List, precomputed_dataset: pd.DataFrame = None, ste
                 energies.append(trajectory.frame_properties[frame_id]['energy'])
                 forces.append(trajectory.frame_properties[frame_id]['forces'])
                 structures.append(AseAtomsAdaptor().get_atoms(trajectory.get_structure(frame_id)))
-        output = {
-                'energy': energies.extend(precomputed_dataset['energy']),
-                'forces': forces.extend(precomputed_dataset['forces']),
-                'ase_atoms': structures.extend(precomputed_dataset['ase_atoms']),
-                'energy_corrected': energies.extend(precomputed_dataset['energy_corrected']),
-                }
+    output = {
+            'energy': energies,
+            'forces': forces,
+            'ase_atoms': structures,
+            'energy_corrected': energies,
+            }
     return output
