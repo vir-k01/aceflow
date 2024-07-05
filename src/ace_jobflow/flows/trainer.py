@@ -25,14 +25,14 @@ class NaiveACEFlowMaker(Maker):
 
     def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
         if compositions is None and structures is None:
-            read_job = read_outputs(precomputed_data=precomputed_data, step_skip=self.step_skip)
+            read_job = read_outputs(precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
             return Flow([read_job, trainer, train_checker], output=train_checker.output, name='ACE_wf_Test')
         else: 
             data = data_gen_flow(compositions, num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures)
-            read_job = read_outputs(md_outputs = data.output, precomputed_data=precomputed_data, step_skip=self.step_skip)
-            trainer = naive_train_ACE(read_job.output, pre_computed_dataset=precomputed_data, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            read_job = read_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
+            trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
             return Flow([data, read_job, trainer, train_checker], output=train_checker.output, name='ACE_wf_Test')
         
@@ -47,7 +47,7 @@ class NaiveACETwoStepFlowMaker(NaiveACEFlowMaker):
 
     def make(self, compositions: list = None, precomputed_data : pd.DataFrame = None, structures: list = None):
         if compositions is None and structures is None:
-            read_job = read_outputs(precomputed_data=precomputed_data, step_skip=self.step_skip)
+            read_job = read_outputs(precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             train_step_1 = naive_train_ACE(read_job.output, loss_weight=self.loss_weights[0], max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker_1 = check_training_output(train_step_1.output)
             train_step_2 = naive_train_ACE(read_job.output, loss_weight=self.loss_weights[1], prev_run_dict=train_checker_1.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
@@ -55,7 +55,7 @@ class NaiveACETwoStepFlowMaker(NaiveACEFlowMaker):
             return Flow([read_job, train_step_1, train_checker_1, train_step_2, train_checker_2], output=train_checker_2.output, name='ACE_wf_Test')
         else: 
             data = data_gen_flow(compositions, num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures)
-            read_job = read_outputs(md_outputs= data.output, precomputed_data=precomputed_data, step_skip=self.step_skip)
+            read_job = read_outputs(md_outputs= data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             train_step_1 = naive_train_ACE(read_job.output, loss_weight=self.loss_weights[0], max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker_1 = check_training_output(train_step_1.output)
             train_step_2 = naive_train_ACE(read_job.output, loss_weight=self.loss_weights[1], prev_run_dict=train_checker_1.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
