@@ -23,21 +23,24 @@ from jobflow.managers.local import run_locally
 
 compositions = ["BaTiO3"] #add more compositions of interest here! The Maker generates amorphous and a series of deformed crystalline structures of these compositions and runs AIMD on them to generate training data.
 precomputed_data = ... #DFT data already computed for problem of interest, in the format ACE expects (pd.DataFrame with energy,ase_atoms,forces columns)
-structures = ... #
-md_maker = ... #atomate2 MD Maker to run the MD steps. If not given, the default VASPMDSet will be run for 200 steps of 2fs MD.
+structures = ... # can be None, since the flow generates crystalline structures from MP too.
+md_maker = ... #atomate2 MD Maker to run the MD steps. If not given, the default VASPMDMaker will be run for 200 steps of 2fs MD.
 
 flow_kwargs = {'num_points': 1, 
                'batch_size': 1,
                'max_steps': 1,
                'md_maker': md_maker
-               'gpu_index': -1} #Minimal working example, uses no gpus. 
+               'gpu_index': -1} #For no gpus. When a GPU has been configured properly, change to 0.  
             
 flow = NaiveACEFlowMaker(**flow_kwargs).make(compositions, precomputed_data, structures)
 output = run_locally(flow)
 ```
 THEN, once the flow has run, the trained potential can be accessed as:
 ```
-potential = out[list(out.keys())[-1]][1].output['potential']  #use yaml.dump(potential, output_file, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None) to write it out for use with ASE or LAMMPS
+potential = output[list(out.keys())[-1]][1].output['potential']
+# use this to write it out for use with ASE or LAMMPS
+with open("output_potential.yaml", "w") as f:
+  yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
 ```
 Any additional data generated in the flow can be accessed using the outputs of the read_outputs job in the flow:
 ```
@@ -45,7 +48,7 @@ computed_data = out[list(out.keys())[-3]][1].output
 ```
 
 The NaiveACETwoStepFlowMaker does two steps of training, one with an emphasis on forces, followed by a more balanced weighting to energy and forces. 
-This helps with the quality of potential trained, esp for MLMD. The loss weights for each step can be provided in the flow_kwargs as a list, and they default to [0.99, 0.3].
+This helps with the quality of potential trained, esp for use in MLMD. The loss weights for each step can be provided in the flow_kwargs as a list, and they default to [0.99, 0.3] for step 1 and 2 respectively.
 
 Finally, for more advanced training configurations (for example using ladder fitting), simply modify the write_inputs function:
 ```
