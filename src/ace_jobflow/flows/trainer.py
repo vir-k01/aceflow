@@ -15,7 +15,7 @@ class NaiveACEFlowMaker(Maker):
     The flow returns the directory with the output_potential.yaml, training log and reports.
     '''
     name : str = 'Naive ACE Trainer'
-    md_maker : MDMaker = field(default_factory=lambda: MDMaker())
+    md_maker : Maker = None #MDMaker = field(default_factory=lambda: MDMaker())
     num_points : int = 5
     temperature : float = 2000
     max_steps : int = 2000
