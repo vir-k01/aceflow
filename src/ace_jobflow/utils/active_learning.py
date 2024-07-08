@@ -119,7 +119,8 @@ def test_potential_in_restricted_space(potential_file: str, active_set: str, com
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)
     active_structures = []
-    test_points = generate_test_points(compositions, base_calculator.chemsys, iterations=3, max_points=max_points)
+    chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
+    test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=max_points)
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
         if gamma > gamma_max:
