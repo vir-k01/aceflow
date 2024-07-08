@@ -1,6 +1,9 @@
 from jobflow import job
 from typing import List
 from pymatgen.io.ase import AseAtomsAdaptor
+from pyace import PyACECalculator
+from ace_jobflow.utils.structure_sampler import generate_test_points
+from ace_jobflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 import pandas as pd
 
 @job
@@ -28,3 +31,18 @@ def read_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = No
             'energy_corrected': energies,
             }
     return output
+
+@job
+def test_potential_in_restricted_space(potential_file: str, active_set: str, compositions: list, gamma_max : int = 10, max_points : int = 500):
+    base_calculator = PyACECalculator(potential_file)
+    base_calculator.set_active_set(active_set)
+    active_structures = []
+    chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
+    test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=max_points)
+    for point in test_points:
+        atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
+        if gamma > gamma_max:
+            active_structures.append(atoms)
+    df = pd.DataFrame({'ase_atoms': active_structures})
+    df_selected = select_structures_with_active_set(potential_file, active_set, df)
+    return df_selected

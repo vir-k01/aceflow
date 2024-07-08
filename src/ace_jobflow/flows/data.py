@@ -74,7 +74,7 @@ class ActiveStructuresFlowMaker(Maker):
     def make(self, compositions: list):
 
         active_structures = test_potential_in_restricted_space(self.potential, self.active_set, compositions, gamma_max=self.gamma_max, max_points=self.max_points)
-        structures = [AseAtomsAdaptor().get_structure(atoms) for atoms in active_structures['ase_atoms']]
+        structures = [AseAtomsAdaptor().get_structure(atoms) for atoms in active_structures.output['ase_atoms']]
 
         if self.static_maker is None:
             self.static_maker = StaticMaker()
