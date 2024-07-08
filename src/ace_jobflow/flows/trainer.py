@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
-from ace_jobflow.flows.data import data_gen_flow
+from ace_jobflow.flows.data import DataGenFlowMaker
 from ace_jobflow.jobs.data import read_outputs
 from ace_jobflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
@@ -30,7 +30,7 @@ class NaiveACEFlowMaker(Maker):
             train_checker = check_training_output(trainer.output)
             return Flow([read_job, trainer, train_checker], output=train_checker.output, name=self.name)
         else: 
-            data = data_gen_flow(compositions, num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures)
+            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures).make(compositions)
             read_job = read_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
@@ -54,7 +54,7 @@ class NaiveACETwoStepFlowMaker(NaiveACEFlowMaker):
             train_checker_2 = check_training_output(train_step_2.output)
             return Flow([read_job, train_step_1, train_checker_1, train_step_2, train_checker_2], output=train_checker_2.output, name=self.name)
         else: 
-            data = data_gen_flow(compositions, num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures)
+            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures).make(compositions)
             read_job = read_outputs(md_outputs= data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             train_step_1 = naive_train_ACE(read_job.output, loss_weight=self.loss_weights[0], max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker_1 = check_training_output(train_step_1.output)
@@ -81,7 +81,7 @@ class NaiveACENStepFlowMaker(NaiveACEFlowMaker):
                 train_checkers.append(check_training_output(train_steps[-1].output))
             return Flow([read_job, *train_steps, *train_checkers], output=train_checkers[-1].output, name=self.name)
         else: 
-            data = data_gen_flow(compositions, num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures)
+            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker, structures=structures).make(compositions)
             read_job = read_outputs(md_outputs=data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             train_steps = []
             train_checkers = []
