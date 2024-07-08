@@ -30,7 +30,7 @@ def data_gen_flow(compositions: list = None, md_maker =  None, num_points: int =
                         "traj_file_fmt": "pmg",
                         "traj_interval": 1
     })
-        md_maker = MDMaker(temperature=temperature, end_temp=temperature, steps=200)
+        #md_maker = MDMaker(temperature=temperature, end_temp=temperature, steps=200)
     
     linear_strain = np.linspace(-0.2, 0.2, num_points)
     deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
