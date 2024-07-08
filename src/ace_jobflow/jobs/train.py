@@ -1,7 +1,8 @@
 from jobflow import job
 import pandas as pd
 import subprocess
-from ..utils.util import write_input
+from ace_jobflow.utils.util import write_input
+from ace_jobflow.utils.active_learning import get_active_set
 import os
 import yaml
 
@@ -40,5 +41,7 @@ def check_training_output(prev_run_dir: str) -> dict:
         output_dict.update({'status': 'incomplete'})
         with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
             output = yaml.load(f, Loader=yaml.FullLoader)
-    output_dict.update({'potential': output, 'dir_name': prev_run_dir})
+    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip')
+    active_set = get_active_set(output, df, is_full=False)
+    output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
     return output_dict

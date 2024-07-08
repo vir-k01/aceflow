@@ -1,16 +1,21 @@
 import numpy as np
 import pandas as pd
 
-from pyace import BBasisConfiguration, ACEBBasisSet, aseatoms_to_atomicenvironment
+from pyace import BBasisConfiguration, ACEBBasisSet, aseatoms_to_atomicenvironment, PyACECalculator
 from pyace.activelearning import compute_B_projections, compute_active_set, compute_active_set_by_batches, \
     compute_A_active_inverse, compute_extrapolation_grade, compute_number_of_functions, \
     count_number_total_atoms_per_species_type, save_active_inverse_set, extract_reference_forces_dict
 from pyace.preparedata import sizeof_fmt
 
-from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, load_datasets
+from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, select_structures_maxvol
+from ace_jobflow.utils.structure_sampler import generate_test_points
+
+from ase.md.langevin import Langevin
+from ase.io.trajectory import Trajectory
+from ase import units
 
 
-def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = True, memory_limit: str ='auto'):
+def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = False, memory_limit: str ='auto'):
     gamma_tolerance = 1.01
     maxvol_iters=300
     maxvol_refinement=5
@@ -85,3 +90,45 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
             save_active_inverse_set(active_set_inv_filename, A_active_inverse_set, elements_name=elements_name)
     
     return active_set_inv_filename
+
+
+def select_structures_with_active_set(potential_file: str, active_set: str, dataset: pd.DataFrame):
+
+    asi_data = np.load(active_set)
+    elements = sorted(asi_data.keys())
+    asi_dict = {i: asi_data[el] for i, el in enumerate(elements)}
+
+    bconf = BBasisConfiguration(potential_file)
+    extra_A0_projections_dict = compute_A_active_inverse(asi_dict)
+    df_selected = select_structures_maxvol(dataset, bconf, extra_A0_projections_dict)
+    return df_selected
+
+
+def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
+    atoms.set_calculator(calculator)
+    atoms.get_potential_energy()
+    T=5000
+    dyn = Langevin(atoms, 1 * units.fs, T * units.kB, 0.002)
+    #traj = Trajectory('MD_BTO_1000K_ASI.traj', 'w', atoms)
+    #dyn.attach(traj.write, interval=50)
+    dyn.run(1000)
+    atoms.get_potential_energy()
+    return [atoms, np.max(calculator.results['gamma'])]
+
+def test_potential_in_restricted_space(potential_file: str, active_set: str, compositions: list, gamma_max : int = 10, max_points : int = 500):
+    base_calculator = PyACECalculator(potential_file)
+    base_calculator.set_active_set(active_set)
+    active_structures = []
+    test_points = generate_test_points(compositions, base_calculator.chemsys, iterations=3, max_points=max_points)
+    for point in test_points:
+        atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
+        if gamma > gamma_max:
+            active_structures.append(atoms)
+    df = pd.DataFrame({'ase_atoms': active_structures})
+    df_selected = select_structures_with_active_set(potential_file, active_set, df)
+    return df_selected
+
+
+
+
+    
