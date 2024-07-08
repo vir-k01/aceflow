@@ -68,7 +68,7 @@ def get_boundary_branches(compositions: list, chemsys):
 
 def generate_test_points(compositions : list, chemsys : list, iterations : int = 3, max_points : int = 500):
     test_points = []
-    dist = 20
+    dist = 10
     num_sampled = 0
     base_branches = get_boundary_branches(compositions=compositions, chemsys=chemsys)
     for i in range(iterations):
