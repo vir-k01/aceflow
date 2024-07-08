@@ -41,7 +41,7 @@ def check_training_output(prev_run_dir: str) -> dict:
         output_dict.update({'status': 'incomplete'})
         with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
             output = yaml.load(f, Loader=yaml.FullLoader)
-    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip', protocol=4)
+    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     active_set = get_active_set(output, df, is_full=False)
     output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
     return output_dict
