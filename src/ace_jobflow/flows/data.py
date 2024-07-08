@@ -9,7 +9,7 @@ from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from dataclasses import dataclass
-from ace_jobflow.utils.active_learning import test_potential_in_restricted_space
+from ace_jobflow.jobs.data import test_potential_in_restricted_space
 
 
 @dataclass
