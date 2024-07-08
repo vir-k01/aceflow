@@ -9,7 +9,7 @@ from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from dataclasses import dataclass
-from ace_jobflow.jobs.data import test_potential_in_restricted_space
+from ace_jobflow.jobs.data import test_potential_in_restricted_space, read_pseudo_equilibration_outputs
 
 
 @dataclass
@@ -74,7 +74,8 @@ class ActiveStructuresFlowMaker(Maker):
     def make(self, compositions: list):
 
         active_structures = test_potential_in_restricted_space(self.potential, self.active_set, compositions, gamma_max=self.gamma_max, max_points=self.max_points)
-        structures = [AseAtomsAdaptor().get_structure(atoms) for atoms in active_structures.output.output['ase_atoms']]
+        read_active_structures = read_pseudo_equilibration_outputs(active_structures.output)
+        structures = read_active_structures.output
 
         if self.static_maker is None:
             self.static_maker = StaticMaker()
@@ -89,6 +90,6 @@ class ActiveStructuresFlowMaker(Maker):
                 static_energy.append(static_job.output.output.energy)
                 static_forces.append(static_job.output.output.forces)
             
-            return Flow([*static_jobs], output={"energy": static_energy, "forces": static_forces, "ase_atoms": active_structures["ase_atoms"], "energy_corrected": static_energy})
+            return Flow([active_structures, read_active_structures, *static_jobs], output={"energy": static_energy, "forces": static_forces, "ase_atoms": active_structures["ase_atoms"], "energy_corrected": static_energy})
         else:
             return None
