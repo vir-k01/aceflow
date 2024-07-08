@@ -34,7 +34,8 @@ def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame =
 
 @job
 def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
-    return [AseAtomsAdaptor().get_structure(atoms) for atoms in outputs['ase_atoms']]
+    outputs = {'structures': AseAtomsAdaptor().get_structure(atoms) for atoms in outputs['ase_atoms']}
+    return outputs
 
 
 @job

@@ -11,6 +11,7 @@ def naive_train_ACE(computed_data_set : dict = None, num_basis : int = 10, cutof
     data_set = pd.DataFrame.from_dict(computed_data_set)
     #data_set = pd.concat([computed_data_set, precomputed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
+    write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
     if prev_run_dict is not None:
         #data_set.to_pickle(prev_dir + "/data.pckl.gzip", compression='gzip', protocol=4)
         prev_dir = prev_run_dict['dir_name']
@@ -19,7 +20,6 @@ def naive_train_ACE(computed_data_set : dict = None, num_basis : int = 10, cutof
         with open("continue.yaml", 'w') as f:
             yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
         #if prev_run_status == 'complete':
-        write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
         subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)
         #else:
         #    naive_train_ACE(computed_data_set, num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index, prev_run_dict)
