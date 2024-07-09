@@ -1,11 +1,19 @@
+from aceflow.utils.config import TrainConfig
 
 
+def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None):
+  num_basis = trainer_config.num_basis
+  cutoff = trainer_config.cutoff
+  loss_weight = trainer_config.loss_weight
+  max_steps = trainer_config.max_steps
+  batch_size = trainer_config.batch_size
+  gpu_index = trainer_config.gpu_index
+  chemsys = ['Ba', 'O', 'Ti']
 
-def write_input(num_basis=700, cutoff=7, loss_weight=0.9, max_steps=2000, batch_size=200, gpu_index=None, reference_energy_dict: dict = None):
-    gpu_index_str = 'None' if gpu_index is None else str(gpu_index)
-    if reference_energy_dict is None:
-        reference_energy_dict = {'Ba': -4.44847687, 'Ti': -4.44848340, 'O': -4.44847511}
-    content = f"""
+  gpu_index_str = 'None' if gpu_index is None else str(gpu_index)
+  if reference_energy_dict is None:
+      reference_energy_dict = {'Ba': -4.44847687, 'Ti': -4.44848340, 'O': -4.44847511}
+  content = f"""
 cutoff: {cutoff} # cutoff for neighbour list construction
 seed: 42  # random seed
 
@@ -13,7 +21,7 @@ seed: 42  # random seed
 ## Metadata section
 #################################################################
 metadata:
-  origin: "Automatically generated input"
+  origin: "Automatically generated input via ACEMaker"
 
 #################################################################
 ## Potential definition section
@@ -21,7 +29,7 @@ metadata:
 potential:
   #filename: continue.yaml
   deltaSplineBins: 0.001
-  elements: ['Ba', 'O', 'Ti']
+  elements: {chemsys}
 
   embeddings:
     ALL: {{
