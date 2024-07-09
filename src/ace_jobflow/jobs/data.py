@@ -41,7 +41,7 @@ def read_statics_outputs(statics: List = None):
         for static in statics:
             energies.append(static.output.output.energy)
             forces.append(static.output.output.forces)
-            structures.append(AseAtomsAdaptor().get_atoms(static.output.output.structure))
+            structures.append(AseAtomsAdaptor().get_atoms(static.output.structure))
     output = {
             'energy': energies,
             'forces': forces,
