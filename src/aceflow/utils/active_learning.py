@@ -8,7 +8,7 @@ from pyace.activelearning import compute_B_projections, compute_active_set, comp
 from pyace.preparedata import sizeof_fmt
 
 from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, select_structures_maxvol
-from ace_jobflow.utils.structure_sampler import generate_test_points
+from aceflow.utils.structure_sampler import generate_test_points
 
 from ase.md.langevin import Langevin
 from ase.io.trajectory import Trajectory

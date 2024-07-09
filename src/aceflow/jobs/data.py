@@ -2,8 +2,8 @@ from jobflow import job
 from typing import List
 from pymatgen.io.ase import AseAtomsAdaptor
 from pyace import PyACECalculator
-from ace_jobflow.utils.structure_sampler import generate_test_points
-from ace_jobflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
+from aceflow.utils.structure_sampler import generate_test_points
+from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 import pandas as pd
 
 @job

@@ -1,8 +1,8 @@
 from jobflow import job
 import pandas as pd
 import subprocess
-from ace_jobflow.utils.util import write_input
-from ace_jobflow.utils.active_learning import get_active_set
+from aceflow.utils.util import write_input
+from aceflow.utils.active_learning import get_active_set
 import os
 import yaml
 

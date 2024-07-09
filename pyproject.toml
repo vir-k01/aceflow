@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ACE_jobflow"
+name = "aceflow"
 version = "0.0.1"
 dependencies = [
   "pymatgen==2024.3.1",

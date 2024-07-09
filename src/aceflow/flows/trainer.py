@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
-from ace_jobflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
-from ace_jobflow.jobs.data import read_MD_outputs
-from ace_jobflow.jobs.train import naive_train_ACE, check_training_output
+from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
+from aceflow.jobs.data import read_MD_outputs
+from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 
 
