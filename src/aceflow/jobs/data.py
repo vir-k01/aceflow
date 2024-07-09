@@ -58,13 +58,14 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
     return outputs
 
 @job
-def deferred_static_from_list(maker, structures, target_idx):
+def deferred_static_from_list(maker, structures):
     if type(structures) is list:
         static_jobs = [maker.make(structure) for structure in structures]
         static_outputs = [static_job.output for static_job in static_jobs]
         flow = Flow(static_jobs, output=static_outputs)
         return Response(replace=flow)
-    return maker.make.original(maker, structures[target_idx])
+    else:
+        return maker.make.original(maker, structures)
 
 @job
 def test_potential_in_restricted_space(prev_dir : str, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
