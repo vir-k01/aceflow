@@ -17,6 +17,7 @@ from aceflow.utils.config import DataGenConfig
 class DataGenFlowMaker(Maker):
     name = "Data Generation Flow"
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
+    md_maker : MDMaker = None
 
     def make(self, compositions: list = None, structures : list = None):
 
@@ -39,7 +40,7 @@ class DataGenFlowMaker(Maker):
                             "traj_file_fmt": "pmg",
                             "traj_interval": 1
         })
-            #self.md_maker = MDMaker(temperature=self.temperature, end_temp=self.temperature, steps=self.md_steps)
+            #self.md_maker = MDMaker(temperature=self.data_gen_config.temperature, end_temp=self.data_gen_config.temperature, steps=self.data_gen_config.md_steps)
         
         linear_strain = np.linspace(-0.2, 0.2, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
