@@ -35,15 +35,16 @@ def naive_train_ACE(computed_data_set : dict = None, active_data_set : dict = No
 @job
 def check_training_output(prev_run_dir: str) -> dict:
     output_dict = {}
+    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     if os.path.isfile(prev_run_dir + '/output_potential.yaml'):
         output_dict.update({'status': 'complete'})
         with open(prev_run_dir + '/output_potential.yaml', 'r') as f:
             output = yaml.load(f, Loader=yaml.FullLoader)
+        active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=True)
     else:
         output_dict.update({'status': 'incomplete'})
         with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
             output = yaml.load(f, Loader=yaml.FullLoader)
-    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
-    active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=False)
+        active_set = get_active_set(prev_run_dir + '/interim_potential_0.yaml', df, is_full=False)
     output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
     return output_dict

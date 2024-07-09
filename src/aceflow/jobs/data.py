@@ -5,6 +5,7 @@ from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
 from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 import pandas as pd
+import os
 
 @job
 def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = None, step_skip: int= 1):
@@ -70,7 +71,10 @@ def deferred_static_from_list(maker, structures):
 @job
 def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
     prev_dir = prev_run_dict['dir_name']
-    potential_file = prev_dir + "/output_potential.yaml"
+    if os.path.isfile(prev_dir + '/output_potential.yaml'):
+        potential_file = prev_dir + "/output_potential.yaml"
+    else:
+        potential_file = prev_dir + '/interim_potential_0.yaml'
     active_set = potential_file.replace(".yaml", ".asi")
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)
