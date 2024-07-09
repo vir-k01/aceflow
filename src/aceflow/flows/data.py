@@ -74,9 +74,8 @@ class ActiveStructuresFlowMaker(Maker):
 
         active_structures = test_potential_in_restricted_space(prev_dir, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
         structures = active_structures.output
-        statics = []
         if self.static_maker is None:
             self.static_maker = StaticMaker()
         static_jobs = deferred_static_from_list(self.static_maker, structures)
         output_reader = read_statics_outputs(static_jobs.output)
-        return Flow([*statics, output_reader], output=output_reader.output)
+        return Flow([active_structures, static_jobs, output_reader], output=output_reader.output)
