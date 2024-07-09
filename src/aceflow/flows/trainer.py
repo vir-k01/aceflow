@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
-from aceflow.utils.config import TrainConfig
+from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
 from aceflow.jobs.data import read_MD_outputs
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
@@ -17,6 +17,7 @@ class NaiveACEFlowMaker(Maker):
     name : str = 'Naive ACE Trainer'
     step_skip : int = 1
     trainer_config: TrainConfig = field(default_factory=lambda: TrainConfig()) #dict = field(default_factory=lambda: {'md_maker': None, 'num_points': 5, 'temperature': 2000, 'max_steps': 2000, 'batch_size': 100, 'gpu_index': None})
+    data_gen_config: DataGenConfig = field(default_factory=lambda: DataGenConfig())
     md_maker : Maker = None #MDMaker = field(default_factory=lambda: MDMaker())
     '''num_points : int = 5
     temperature : float = 2000
@@ -32,7 +33,7 @@ class NaiveACEFlowMaker(Maker):
             train_checker = check_training_output(trainer.output)
             return Flow([read_job, trainer, train_checker], output=train_checker.output, name=self.name)
         else: 
-            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker).make(compositions, structures)
+            data = DataGenFlowMaker(self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
             read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             trainer = naive_train_ACE(read_job.output, self.trainer_config)
             train_checker = check_training_output(trainer.output)

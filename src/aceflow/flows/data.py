@@ -8,13 +8,15 @@ from atomate2.common.jobs.structure_gen import get_random_packed
 from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs
+from aceflow.utils.config import DataGenConfig
 
 
 @dataclass
 class DataGenFlowMaker(Maker):
     name = "Data Generation Flow"
+    data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
     md_maker : Maker = None
     num_points : int = 5
     temperature : float = 2000
@@ -34,8 +36,8 @@ class DataGenFlowMaker(Maker):
                 working_structures.append(get_random_packed(composition))
         if self.md_maker is None:
             self.md_maker = PyACEMDMaker(**{"time_step": 2,
-                            "n_steps": self.md_steps,
-                            "temperature": self.temperature,
+                            "n_steps": self.data_gen_config.md_steps,
+                            "temperature": self.data_gen_config.temperature,
                             "calculator_kwargs": {'basis_set':'/pscratch/sd/v/virkaran/ace_test/train/29-6/2/output_potential.yaml'},
                             "traj_file": "test-ACE.traj",
                             "traj_file_fmt": "pmg",
@@ -43,7 +45,7 @@ class DataGenFlowMaker(Maker):
         })
             #self.md_maker = MDMaker(temperature=self.temperature, end_temp=self.temperature, steps=self.md_steps)
         
-        linear_strain = np.linspace(-0.2, 0.2, self.num_points)
+        linear_strain = np.linspace(-0.2, 0.2, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
         md_jobs = []
         md_outputs = []
