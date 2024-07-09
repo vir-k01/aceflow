@@ -69,7 +69,7 @@ class ActiveStructuresFlowMaker(Maker):
     max_points : int = 500
     max_structures : int = 200
         
-    @job
+  
     def make(self, compositions: list, prev_dir: str):
 
         active_structures = test_potential_in_restricted_space(prev_dir, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
