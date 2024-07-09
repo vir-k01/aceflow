@@ -7,8 +7,11 @@ import os
 import yaml
 
 @job
-def naive_train_ACE(computed_data_set : dict = None, num_basis : int = 10, cutoff : int = 7, loss_weight : float = 0.9, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None, prev_run_dict: dict = None) -> str:
+def naive_train_ACE(computed_data_set : dict = None, active_data_set : dict = None, num_basis : int = 10, cutoff : int = 7, loss_weight : float = 0.9, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None, prev_run_dict: dict = None) -> str:
     data_set = pd.DataFrame.from_dict(computed_data_set)
+    if active_data_set is not None:
+        active_data_set = pd.DataFrame.from_dict(active_data_set)
+        data_set = pd.concat([data_set, active_data_set], axis=0, join="outer", ignore_index=False, keys=None)
     #data_set = pd.concat([computed_data_set, precomputed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)

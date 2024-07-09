@@ -110,7 +110,7 @@ class ACEMaker(NaiveACEFlowMaker):
             trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
             active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_active_checker = check_training_output(train_active.output)
             return Flow([read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
         else:  
@@ -119,7 +119,7 @@ class ACEMaker(NaiveACEFlowMaker):
             trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
             active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_active_checker = check_training_output(train_active.output)
             return Flow([data, read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
 
