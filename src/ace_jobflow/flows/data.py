@@ -65,11 +65,15 @@ class DataGenFlowMaker(Maker):
 class ActiveStructuresFlowMaker(Maker):
     name = "Active Structures Flow"
     static_maker : Maker = None
-    gamma_max : int = 10
+    gamma_max : int = 5
     max_points : int = 500
     potential : str = None
     active_set : str = None
+    prev_dir : str = None
     max_structures : int = 200
+    if prev_dir:
+        potential = prev_dir + "/output_potential.yaml"
+        active_set = potential.replace(".yaml", ".asi")
 
     def make(self, compositions: list):
 

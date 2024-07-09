@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
-from ace_jobflow.flows.data import DataGenFlowMaker
+from ace_jobflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from ace_jobflow.jobs.data import read_MD_outputs
 from ace_jobflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
@@ -90,7 +90,35 @@ class NaiveACENStepFlowMaker(NaiveACEFlowMaker):
                 train_checkers.append(check_training_output(train_steps[-1].output))
             return Flow([data, read_job, *train_steps, *train_checkers], output=train_checkers[-1].output, name=self.name)
 
+@dataclass
+class ACEMaker(NaiveACEFlowMaker):
+    '''
+    Basic ACE trainer: Wrapper for pacemaker, also calls a series of md jobs on structures (both amorphous using packmol and crystalline, queried from MP). 
+    Any precomputed data can be passed to the trainer too, as long as it is in the format required by pacemaker (pd.DataFrame with columns for energy, ase_atoms, forces and energy_corrected).
+    The flow returns the directory with the output_potential.yaml, training log and reports.
+    '''
+    name : str = 'ACE Maker'
+    md_maker : Maker = None
+    static_maker : Maker = None
 
+    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
+        if compositions is None and structures is None:
+            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.step_skip)
+            trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_checker = check_training_output(trainer.output)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, prev_dir=train_checker.output.dir_name, max_structures=10, max_points=1, gamma_max=1).make(compositions)
+            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_active_checker = check_training_output(train_active.output)
+            return Flow([read_job, trainer, train_checker, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
+        else: 
+            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker).make(compositions, structures)
+            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
+            trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_checker = check_training_output(trainer.output)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, prev_dir=train_checker.output.dir_name, max_structures=10, max_points=1, gamma_max=1).make(compositions)
+            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            train_active_checker = check_training_output(train_active.output)
+            return Flow([data, read_job, trainer, train_checker, train_active, train_active_checker], output=train_checker.output, name=self.name)
 
 '''
 def naive_flow(compositions: list, num_points: int = 5, temperature: float = 2000, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None):
