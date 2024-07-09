@@ -40,7 +40,7 @@ def check_training_output(prev_run_dir: str) -> dict:
         output_dict.update({'status': 'complete'})
         with open(prev_run_dir + '/output_potential.yaml', 'r') as f:
             output = yaml.load(f, Loader=yaml.FullLoader)
-        active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=True)
+        active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=False)
     else:
         output_dict.update({'status': 'incomplete'})
         with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
