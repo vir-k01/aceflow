@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-
+from monty.json import MSONable
 
 
 @dataclass
-class TrainConfig():
+class TrainConfig(MSONable):
     num_basis : int = 10
     cutoff : int = 7
     loss_weight : float = 0.9
@@ -13,14 +13,14 @@ class TrainConfig():
 
 
 @dataclass
-class ActiveLearningConfig():
+class ActiveLearningConfig(MSONable):
     max_points : int = 500
     max_structures : int = 200
     gamma_max : int = 5
 
 
 @dataclass
-class DataGenConfig():
+class DataGenConfig(MSONable):
     step_skip : int = 1
     num_points : int = 5
     temperature : float = 2000
