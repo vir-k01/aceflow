@@ -21,7 +21,8 @@ class ActiveLearningConfig():
 
 @dataclass
 class DataGenConfig():
+    step_skip : int = 1
     num_points : int = 5
     temperature : float = 2000
-    md_steps = 10
+    md_steps : int = 10
 

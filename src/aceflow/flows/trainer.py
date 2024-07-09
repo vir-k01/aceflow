@@ -15,7 +15,6 @@ class NaiveACEFlowMaker(Maker):
     The flow returns the directory with the output_potential.yaml, training log and reports.
     '''
     name : str = 'Naive ACE Trainer'
-    step_skip : int = 1
     trainer_config: TrainConfig = field(default_factory=lambda: TrainConfig()) #dict = field(default_factory=lambda: {'md_maker': None, 'num_points': 5, 'temperature': 2000, 'max_steps': 2000, 'batch_size': 100, 'gpu_index': None})
     data_gen_config: DataGenConfig = field(default_factory=lambda: DataGenConfig())
     md_maker : Maker = None #MDMaker = field(default_factory=lambda: MDMaker())
@@ -28,14 +27,14 @@ class NaiveACEFlowMaker(Maker):
 
     def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
         if compositions is None and structures is None:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.step_skip)
-            trainer = naive_train_ACE(read_job.output, self.trainer_config)
+            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
             train_checker = check_training_output(trainer.output)
             return Flow([read_job, trainer, train_checker], output=train_checker.output, name=self.name)
         else: 
-            data = DataGenFlowMaker(self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
-            trainer = naive_train_ACE(read_job.output, self.trainer_config)
+            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
+            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
             train_checker = check_training_output(trainer.output)
             return Flow([data, read_job, trainer, train_checker], output=train_checker.output, name=self.name)
         

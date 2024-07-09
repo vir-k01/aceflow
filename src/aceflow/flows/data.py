@@ -17,10 +17,6 @@ from aceflow.utils.config import DataGenConfig
 class DataGenFlowMaker(Maker):
     name = "Data Generation Flow"
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
-    md_maker : Maker = None
-    num_points : int = 5
-    temperature : float = 2000
-    md_steps = 10
 
     def make(self, compositions: list = None, structures : list = None):
 
