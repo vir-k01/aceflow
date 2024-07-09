@@ -75,6 +75,10 @@ def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list,
         potential_file = prev_dir + "/output_potential.yaml"
     else:
         potential_file = prev_dir + '/interim_potential_0.yaml'
+    if os.path.isfile(potential_file.replace(".yaml", ".asi")):
+        active_set = potential_file.replace(".yaml", ".asi")
+    else:
+        active_set =potential_file.replace(".yaml", ".asi.nonlinear")
     active_set = potential_file.replace(".yaml", ".asi")
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)
