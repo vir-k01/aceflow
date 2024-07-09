@@ -68,7 +68,8 @@ def deferred_static_from_list(maker, structures):
         return maker.make.original(maker, structures)
 
 @job
-def test_potential_in_restricted_space(prev_dir : str, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
+def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
+    prev_dir = prev_run_dict['dir_name']
     potential_file = prev_dir + "/output_potential.yaml"
     active_set = potential_file.replace(".yaml", ".asi")
     base_calculator = PyACECalculator(potential_file)

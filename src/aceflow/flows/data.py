@@ -70,9 +70,9 @@ class ActiveStructuresFlowMaker(Maker):
     max_structures : int = 200
         
   
-    def make(self, compositions: list, prev_dir: str):
+    def make(self, compositions: list, prev_run_dict: dict):
 
-        active_structures = test_potential_in_restricted_space(prev_dir, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
+        active_structures = test_potential_in_restricted_space(prev_run_dict, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
         structures = active_structures.output
         if self.static_maker is None:
             self.static_maker = StaticMaker()

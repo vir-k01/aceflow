@@ -14,7 +14,6 @@ def naive_train_ACE(computed_data_set : dict = None, num_basis : int = 10, cutof
     write_input(num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index)
     if prev_run_dict is not None:
         #data_set.to_pickle(prev_dir + "/data.pckl.gzip", compression='gzip', protocol=4)
-        prev_dir = prev_run_dict['dir_name']
         potential = prev_run_dict['potential']
         prev_run_status = prev_run_dict['status']
         with open("continue.yaml", 'w') as f:
