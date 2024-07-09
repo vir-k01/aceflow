@@ -74,8 +74,7 @@ class ActiveStructuresFlowMaker(Maker):
     def make(self, compositions: list):
 
         active_structures = test_potential_in_restricted_space(self.potential, self.active_set, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
-        read_active_structures = read_pseudo_equilibration_outputs(active_structures.output)
-        structures = read_active_structures.output
+        structures = active_structures.output
         statics_outputs = []
         statics = []
         if self.static_maker is None:
@@ -83,4 +82,4 @@ class ActiveStructuresFlowMaker(Maker):
         for i in range(self.max_structures):
             statics.append(deferred_static_from_list(self.static_maker, structures, i))
             statics_outputs.append(statics[-1].output)
-        return Flow([active_structures, read_active_structures, *statics], output=statics_outputs)
+        return Flow([active_structures, *statics], output=statics_outputs)

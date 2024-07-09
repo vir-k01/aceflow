@@ -75,4 +75,4 @@ def test_potential_in_restricted_space(potential_file: str, active_set: str, com
             active_structures.append(atoms)
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=max_structures)
-    return df_selected
+    return [AseAtomsAdaptor().get_atoms(structure) for structure in df_selected['ase_atoms']]
