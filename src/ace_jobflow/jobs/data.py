@@ -60,7 +60,7 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
 def deferred_static_from_list(maker, structures, target_idx):
     if target_idx >= len(structures):
         return None
-    return maker.make.original(structures[target_idx])
+    return maker.make.original(maker, structures[target_idx])
 
 @job
 def test_potential_in_restricted_space(potential_file: str, active_set: str, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
