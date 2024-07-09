@@ -81,7 +81,7 @@ class ActiveStructuresFlowMaker(Maker):
         statics = []
         if self.static_maker is None:
             self.static_maker = StaticMaker()
-        for i in range(self.max_structures):
+        for i in range(len(active_structures)):
             statics.append(deferred_static_from_list(self.static_maker, structures, i))
             statics_outputs.append(statics[-1].output)
         output_reader = read_statics_outputs(statics_outputs)
