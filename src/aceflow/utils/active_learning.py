@@ -28,10 +28,10 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
     bbasis = ACEBBasisSet(bconf)
     nfuncs = compute_number_of_functions(bbasis)
 
-    if is_full:
-        n_projections = [p * bbasis.map_embedding_specifications[st].ndensity for st, p in enumerate(nfuncs)]
-    else:
-        n_projections = nfuncs
+    #if is_full:
+    #    n_projections = [p * bbasis.map_embedding_specifications[st].ndensity for st, p in enumerate(nfuncs)]
+    #else:
+    n_projections = nfuncs
     
     elements_to_index_map = bbasis.elements_to_index_map
     elements_name = bbasis.elements_name
@@ -54,10 +54,10 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
     batch_size = compute_batch_size(batch_size_option, mem_lim, num_structures, required_active_set_memory,
                                     required_projections_memory, verbose)
 
-    if is_full:
-        active_set_inv_filename = potential_file.replace(".yaml", ".asi.nonlinear")
-    else:
-        active_set_inv_filename = potential_file.replace(".yaml", ".asi")
+    #if is_full:
+    #    active_set_inv_filename = potential_file.replace(".yaml", ".asi.nonlinear")
+    #else:
+    active_set_inv_filename = potential_file.replace(".yaml", ".asi")
     
     if batch_size is None:
         # single shot MaxVol
