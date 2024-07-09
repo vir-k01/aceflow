@@ -118,10 +118,10 @@ class ACEMaker(NaiveACEFlowMaker):
             read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
             trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, prev_dir=trainer.output, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions)
-            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=trainer.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, prev_dir=train_checker.output.dir_name, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions)
+            train_active = naive_train_ACE(computed_data_set=active_set_flow.output, prev_run_dict=train_checker.output.dir_name, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
             train_active_checker = check_training_output(train_active.output)
-            return Flow([data, read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_checker.output, name=self.name)
+            return Flow([data, read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
 
 '''
 def naive_flow(compositions: list, num_points: int = 5, temperature: float = 2000, max_steps: int = 2000, batch_size: int = 200, gpu_index: int = None):
