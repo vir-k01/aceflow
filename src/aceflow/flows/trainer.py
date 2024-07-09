@@ -17,8 +17,8 @@ class NaiveACEFlowMaker(Maker):
     name : str = 'Naive ACE Trainer'
     step_skip : int = 1
     trainer_config: TrainConfig = field(default_factory=lambda: TrainConfig()) #dict = field(default_factory=lambda: {'md_maker': None, 'num_points': 5, 'temperature': 2000, 'max_steps': 2000, 'batch_size': 100, 'gpu_index': None})
-    '''md_maker : Maker = None #MDMaker = field(default_factory=lambda: MDMaker())
-    num_points : int = 5
+    md_maker : Maker = None #MDMaker = field(default_factory=lambda: MDMaker())
+    '''num_points : int = 5
     temperature : float = 2000
     max_steps : int = 2000
     batch_size : int = 100
