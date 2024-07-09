@@ -101,5 +101,5 @@ backend:
   gpu_config: {{gpu_ind: {gpu_index_str}, mem_limit: 0}}
 """
 
-    with open("input.yaml", 'w') as file:
-        file.write(content)
+  with open("input.yaml", 'w') as file:
+      file.write(content)
