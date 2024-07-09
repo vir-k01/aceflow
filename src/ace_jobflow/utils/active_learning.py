@@ -92,7 +92,7 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
     return active_set_inv_filename
 
 
-def select_structures_with_active_set(potential_file: str, active_set: str, dataset: pd.DataFrame):
+def select_structures_with_active_set(potential_file: str, active_set: str, dataset: pd.DataFrame, max_structures: int = 200):
 
     asi_data = np.load(active_set)
     elements = sorted(asi_data.keys())
@@ -100,7 +100,7 @@ def select_structures_with_active_set(potential_file: str, active_set: str, data
 
     bconf = BBasisConfiguration(potential_file)
     extra_A0_projections_dict = compute_A_active_inverse(asi_dict)
-    df_selected = select_structures_maxvol(dataset, bconf, extra_A0_projections_dict)
+    df_selected = select_structures_maxvol(dataset, bconf, extra_A0_projections_dict, max_structures=max_structures)
     return df_selected
 
 

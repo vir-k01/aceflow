@@ -33,13 +33,37 @@ def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame =
     return output
 
 @job
+def read_statics_outputs(statics: List = None):
+    energies = []
+    forces = []
+    structures = []
+    if statics:
+        for static in statics:
+            energies.append(static.output.output.energy)
+            forces.append(static.output.output.forces)
+            structures.append(AseAtomsAdaptor().get_atoms(static.output.output.structure))
+    output = {
+            'energy': energies,
+            'forces': forces,
+            'ase_atoms': structures,
+            'energy_corrected': energies,
+            }
+    return output
+
+
+@job
 def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
     outputs = {'structures': AseAtomsAdaptor().get_structure(atoms) for atoms in outputs['ase_atoms']}
     return outputs
 
+@job
+def deferred_static_from_list(maker, structures, target_idx):
+    if target_idx >= len(structures):
+        return None
+    return maker.make.original(structures[target_idx])
 
 @job
-def test_potential_in_restricted_space(potential_file: str, active_set: str, compositions: list, gamma_max : int = 10, max_points : int = 500):
+def test_potential_in_restricted_space(potential_file: str, active_set: str, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)
     active_structures = []
@@ -50,5 +74,5 @@ def test_potential_in_restricted_space(potential_file: str, active_set: str, com
         if gamma > gamma_max:
             active_structures.append(atoms)
     df = pd.DataFrame({'ase_atoms': active_structures})
-    df_selected = select_structures_with_active_set(potential_file, active_set, df)
+    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=max_structures)
     return df_selected

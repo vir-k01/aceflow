@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 from pymatgen.io.ase import AseAtomsAdaptor
-from jobflow import Flow, Maker
+from jobflow import Flow, Maker, job
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.structure_gen import get_random_packed
@@ -9,7 +9,7 @@ from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from dataclasses import dataclass
-from ace_jobflow.jobs.data import test_potential_in_restricted_space, read_pseudo_equilibration_outputs
+from ace_jobflow.jobs.data import test_potential_in_restricted_space, read_pseudo_equilibration_outputs, deferred_static_from_list, read_statics_outputs
 
 
 @dataclass
@@ -69,27 +69,18 @@ class ActiveStructuresFlowMaker(Maker):
     max_points : int = 500
     potential : str = None
     active_set : str = None
-    
-    
+    max_structures : int = 200
+
     def make(self, compositions: list):
 
-        active_structures = test_potential_in_restricted_space(self.potential, self.active_set, compositions, gamma_max=self.gamma_max, max_points=self.max_points)
+        active_structures = test_potential_in_restricted_space(self.potential, self.active_set, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
         read_active_structures = read_pseudo_equilibration_outputs(active_structures.output)
         structures = read_active_structures.output
-
+        statics_outputs = []
+        statics = []
         if self.static_maker is None:
             self.static_maker = StaticMaker()
-        static_jobs = []
-        static_energy = []
-        static_forces = []
-        if structures:
-            for structure in structures:
-                static_job = self.static_maker.make(structure)
-                static_job.name = f"{structure.composition.reduced_formula}_Active_Structure"
-                static_jobs.append(static_job)
-                static_energy.append(static_job.output.output.energy)
-                static_forces.append(static_job.output.output.forces)
-            
-            return Flow([active_structures, read_active_structures, *static_jobs], output={"energy": static_energy, "forces": static_forces, "ase_atoms": active_structures["ase_atoms"], "energy_corrected": static_energy})
-        else:
-            return None
+        for i in range(self.max_structures):
+            statics.append(deferred_static_from_list(self.static_maker, structures, i))
+            statics_outputs.append(statics[-1].output)
+        return Flow([active_structures, read_active_structures, *statics], output=statics_outputs)
