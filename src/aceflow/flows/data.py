@@ -67,11 +67,10 @@ class ActiveStructuresFlowMaker(Maker):
     static_maker : Maker = None
     gamma_max : int = 5
     max_points : int = 500
-    prev_dir : str = None
     max_structures : int = 200
         
     @job
-    def make(self, compositions: list, prev_dir: str = None):
+    def make(self, compositions: list, prev_dir: str):
 
         potential = prev_dir + "/output_potential.yaml"
         active_set = potential.replace(".yaml", ".asi")

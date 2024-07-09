@@ -18,7 +18,7 @@ Example usage:
 
 Say we want to train an ACE potential for the Ba-Ti-O composition space, and we already have some precomputed data, stored in a dataframe and certain structures (say of an interface or a defect) we want the potential to be trained on for whatever downstream usecase for the potential. To train with jobflow:
 ```
-from ace_jobflow.flows.trainer import NaiveACEFlowMaker, NaiveACETwoStepFlowMaker
+from aceflow.flows.trainer import NaiveACEFlowMaker, NaiveACETwoStepFlowMaker
 from jobflow.managers.local import run_locally
 
 compositions = ["BaTiO3"] #add more compositions of interest here! The Maker generates amorphous and a series of deformed crystalline structures of these compositions and runs AIMD on them to generate training data.
@@ -52,7 +52,7 @@ This helps with the quality of potential trained, esp for use in MLMD. The loss 
 
 Finally, for more advanced training configurations (for example using ladder fitting), simply modify the write_inputs function:
 ```
-from ace_jobflow.utils.util import write_inputs
+from aceflow.utils.util import write_inputs
 write_inputs() #modidy the body of text in this function to change the input.yaml written for pacemaker.
 ```
 
