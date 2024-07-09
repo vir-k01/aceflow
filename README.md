@@ -1,4 +1,4 @@
-# ACE_jobflow
+# aceflow
 
 (WIP) Wrapper for the pacemaker python package to use with jobflow for high-throughput training of ACE Machine Learning Interatomic Potentials.
 
