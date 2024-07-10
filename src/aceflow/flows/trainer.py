@@ -140,6 +140,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         active_set_flows = []
         active_set_flow_outputs = []
         job_list = []
+        prev_run_dict = None
 
         if compositions is None and structures is None:
             self.data_gen_config.data_generator = None
