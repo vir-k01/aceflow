@@ -172,7 +172,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                     prev_run_dict = train_checkers[-1].output
                     trainers.append(naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow_outputs, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
                     train_checkers.append(check_training_output(trainers[-1].output))
-            job_list.extend(active_set_flow_outputs)
+            job_list.extend(active_set_flows)
         job_list.extend(trainers)
         job_list.extend(train_checkers)
         return Flow(job_list, output=train_checkers[-1].output, name=self.name)
