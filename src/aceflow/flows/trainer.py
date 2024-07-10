@@ -162,7 +162,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             self.trainer_config.loss_weight = self.loss_weights[i]
             if i:
                 prev_run_dict = train_checkers[-1].output
-            trainers.append(naive_train_ACE(read_job.output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
+            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
             train_checkers.append(check_training_output(trainers[-1].output))
 
         if self.active_learning_config.active_learning_loops:
