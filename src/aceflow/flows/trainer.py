@@ -168,11 +168,11 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                 active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
                 active_set_flow_outputs.append(active_set_flow.output)
-                for i in range(len(self.loss_weights)):
+                '''for i in range(len(self.loss_weights)):
                     self.trainer_config.loss_weight = self.loss_weights[i]
                     prev_run_dict = train_checkers[-1].output
                     trainers.append(naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow_outputs, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
-                    train_checkers.append(check_training_output(trainers[-1].output))
+                    train_checkers.append(check_training_output(trainers[-1].output))'''
             job_list.extend(active_set_flows)
         job_list.extend(trainers)
         job_list.extend(train_checkers)
