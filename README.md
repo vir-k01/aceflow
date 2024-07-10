@@ -66,6 +66,6 @@ Furthermore, active learning can be done iteratively several times by modifying 
 Finally, for more advanced pacemaker training configurations (for example using ladder fitting), simply modify the write_inputs function:
 ```
 from aceflow.utils.util import write_inputs
-write_inputs() #modidy the body of text in this function to change the input.yaml written for pacemaker.
+write_inputs() #modify the body of text in this function to change the input.yaml written for pacemaker.
 ```
 
