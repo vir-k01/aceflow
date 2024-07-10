@@ -163,7 +163,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             train_checkers.append(check_training_output(trainers[-1].output))
 
         if self.active_learning_config.active_learning_loops:
-            for i in self.active_learning_config.active_learning_loops:
+            for i in range(self.active_learning_config.active_learning_loops):
                 active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
                 active_set_flow_outputs.append(active_set_flow.output)
