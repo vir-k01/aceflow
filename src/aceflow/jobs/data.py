@@ -1,5 +1,5 @@
 from jobflow import job, Response, Flow
-from typing import List
+from typing import List, Union
 from pymatgen.io.ase import AseAtomsAdaptor
 from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
@@ -52,6 +52,21 @@ def read_statics_outputs(statics: List = None):
             'energy_corrected': energies,
             }
     return output
+
+
+@job
+def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
+        
+    energies = []
+    forces = []
+    structures = []
+    for datum in data:
+        if isinstance(datum, pd.DataFrame):
+            datum = datum.to_dict()
+        energies.extend(datum['energy'])
+        forces.extend(datum['forces'])
+        structures.extend(datum['ase_atoms'])
+    return {'energy': energies, 'forces': forces, 'ase_atoms': structures}
 
 
 @job

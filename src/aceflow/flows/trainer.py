@@ -3,7 +3,7 @@ from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
-from aceflow.jobs.data import read_MD_outputs
+from aceflow.jobs.data import read_MD_outputs, consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 
@@ -138,7 +138,8 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         trainers = []
         train_checkers = []
         active_set_flows = []
-        active_set_flow_outputs = []
+        consolidate_data_jobs = []
+        #active_set_flow_outputs = []
         job_list = []
         prev_run_dict = None
         data_output = None
@@ -154,6 +155,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             job_list.append(data)
 
         read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+        consolidate_data_jobs.append(consolidate_data([read_job.output]))
         job_list.append(read_job)
 
         for i in range(len(self.loss_weights)):
@@ -167,13 +169,15 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             for i in range(self.active_learning_config.active_learning_loops):
                 active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
-                active_set_flow_outputs.append(active_set_flow.output)
-                '''for i in range(len(self.loss_weights)):
-                    self.trainer_config.loss_weight = self.loss_weights[i]
+                consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output, active_set_flow.output]))
+                #active_set_flow_outputs.append(active_set_flow.output)
+                for j in range(len(self.loss_weights)):
+                    self.trainer_config.loss_weight = self.loss_weights[j]
                     prev_run_dict = train_checkers[-1].output
-                    trainers.append(naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow_outputs, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
-                    train_checkers.append(check_training_output(trainers[-1].output))'''
+                    trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
+                    train_checkers.append(check_training_output(trainers[-1].output))
             job_list.extend(active_set_flows)
+            job_list.extend(consolidate_data_jobs)
         job_list.extend(trainers)
         job_list.extend(train_checkers)
         return Flow(job_list, output=train_checkers[-1].output, name=self.name)
