@@ -14,6 +14,7 @@ class TrainConfig(MSONable):
 
 @dataclass
 class ActiveLearningConfig(MSONable):
+    active_learning_loops : int = 1
     max_points : int = 500
     max_structures : int = 200
     gamma_max : int = 5
@@ -25,4 +26,5 @@ class DataGenConfig(MSONable):
     num_points : int = 5
     temperature : float = 2000
     md_steps : int = 10
+    data_generator : str = 'MD' # set to none if you do not want to generate any new data for training
 

@@ -10,7 +10,7 @@ from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from dataclasses import dataclass, field
 from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs
-from aceflow.utils.config import DataGenConfig
+from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
 
 
 @dataclass
@@ -64,14 +64,11 @@ class DataGenFlowMaker(Maker):
 class ActiveStructuresFlowMaker(Maker):
     name = "Active Structures Flow"
     static_maker : Maker = None
-    gamma_max : int = 5
-    max_points : int = 500
-    max_structures : int = 200
-        
+    active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
     def make(self, compositions: list, prev_run_dict: dict):
 
-        active_structures = test_potential_in_restricted_space(prev_run_dict, compositions, gamma_max=self.gamma_max, max_points=self.max_points, max_structures=self.max_structures)
+        active_structures = test_potential_in_restricted_space(prev_run_dict, compositions, active_learning_config=self.active_learning_config)
         structures = active_structures.output
         if self.static_maker is None:
             self.static_maker = StaticMaker()

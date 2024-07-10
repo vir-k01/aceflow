@@ -4,6 +4,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
 from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
+from aceflow.utils.config import ActiveLearningConfig
 import pandas as pd
 import os
 
@@ -69,7 +70,10 @@ def deferred_static_from_list(maker, structures):
         return maker.make.original(maker, structures)
 
 @job
-def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, gamma_max : int = 10, max_points : int = 500, max_structures : int = 200):
+def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, active_learning_config: ActiveLearningConfig):
+    gamma_max = active_learning_config.gamma_max
+    max_points = active_learning_config.max_points
+    max_structures = active_learning_config.max_structures
     prev_dir = prev_run_dict['dir_name']
     if os.path.isfile(prev_dir + '/output_potential.yaml'):
         potential_file = prev_dir + "/output_potential.yaml"
@@ -78,7 +82,7 @@ def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list,
     if os.path.isfile(potential_file.replace(".yaml", ".asi")):
         active_set = potential_file.replace(".yaml", ".asi")
     else:
-        active_set =potential_file.replace(".yaml", ".asi.nonlinear")
+        active_set = potential_file.replace(".yaml", ".asi.nonlinear")
     active_set = potential_file.replace(".yaml", ".asi")
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)

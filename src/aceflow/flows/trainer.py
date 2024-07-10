@@ -68,9 +68,9 @@ class NaiveACENStepFlowMaker(NaiveACEFlowMaker):
 @dataclass
 class ACEMaker(NaiveACENStepFlowMaker):
     '''
-    ACEMaker(train_cinfig=TrainConfig(**kwargs))
     Basic ACE trainer: Wrapper for pacemaker, also calls a series of md jobs on structures (both amorphous using packmol and crystalline, queried from MP). 
     Any precomputed data can be passed to the trainer too, as long as it is in the format required by pacemaker (pd.DataFrame with columns for energy, ase_atoms, forces and energy_corrected).
+    By default, 2 steps are used for training, with loss weights [0.99, 0.3], followed by an active learning step in the space defined by the compositions given in the make() call.
     The flow returns the directory with the output_potential.yaml, training log and reports.
 
     Inputs:
@@ -95,28 +95,83 @@ class ACEMaker(NaiveACENStepFlowMaker):
     '''
     name : str = 'ACE Maker'
     trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
-    trainer_config: dict = field(default_factory=lambda: {'md_maker': None, 'num_points': 5, 'temperature': 2000, 'max_steps': 2000, 'batch_size': 100, 'step_skip': 1, 'gpu_index': None, 'loss_weights': [0.99, 0.3], 'static_maker': None, 'max_structures': 10, 'max_points': 1, 'gamma_max': 1})
+    data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
+    active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : Maker = None
-    max_structures : int = 10
-    max_points : int = 1
-    gamma_max : int = 1
+    md_maker : Maker = None
 
     def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
-        if compositions is None and structures is None:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.step_skip)
-            trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+        if compositions and structures is None:
+            self.data_gen_config.data_generator = None
+            if precomputed_data is None:
+                raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
+        if self.data_gen_config.data_generator is None:
+            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
             train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning=self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
+            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, trainer_config=self.trainer_config)
             train_active_checker = check_training_output(train_active.output)
             return Flow([read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
         else:  
-            data = DataGenFlowMaker(num_points=self.num_points, temperature=self.temperature, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.step_skip)
-            trainer = naive_train_ACE(read_job.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
+            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
             train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, max_structures=self.max_structures, max_points=self.max_points, gamma_max=self.gamma_max).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, max_steps=self.max_steps, batch_size=self.batch_size, gpu_index=self.gpu_index)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config = self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
+            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, trainer_config=self.trainer_config)
             train_active_checker = check_training_output(train_active.output)
             return Flow([data, read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
 
+@dataclass
+class ProductionACEMaker(NaiveACENStepFlowMaker):
+    name : str = 'ACE Maker'
+    trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
+    data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
+    active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
+    static_maker : Maker = None
+    md_maker : Maker = None
+    loss_weights = [0.99, 0.3]
+
+    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
+
+        trainers = []
+        train_checkers = []
+        active_set_flows = []
+        active_set_flow_outputs = []
+        job_list = []
+
+        if compositions and structures is None:
+            self.data_gen_config.data_generator = None
+            if precomputed_data is None:
+                raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
+        
+        if self.data_gen_config.data_generator:
+            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
+            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            job_list.append(data)
+        else:
+            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+        job_list.append(read_job)
+
+        for i in range(len(self.loss_weights)):
+            self.trainer_config.loss_weight = self.loss_weights[i]
+            if i:
+                prev_run_dict = train_checkers[-1].output
+            trainers.append(naive_train_ACE(read_job.output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
+            train_checkers.append(check_training_output(trainers[-1].output))
+
+        if self.active_learning_config.active_learning_loops:
+            for i in self.active_learning_config.active_learning_loops:
+                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
+                active_set_flows.append(active_set_flow)
+                active_set_flow_outputs.append(active_set_flow.output)
+                for i in range(len(self.loss_weights)):
+                    self.trainer_config.loss_weight = self.loss_weights[i]
+                    prev_run_dict = train_checkers[-1].output
+                    trainers.append(naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow_outputs, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
+                    train_checkers.append(check_training_output(trainers[-1].output))
+            job_list.extend(active_set_flow_outputs)
+        job_list.extend(trainers)
+        job_list.extend(train_checkers)
+        return Flow(job_list, output=train_checkers[-1].output, name=self.name)

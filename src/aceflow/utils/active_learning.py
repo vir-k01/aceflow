@@ -109,9 +109,7 @@ def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
     atoms.get_potential_energy()
     T=5000
     dyn = Langevin(atoms, 1 * units.fs, T * units.kB, 0.002)
-    #traj = Trajectory('MD_BTO_1000K_ASI.traj', 'w', atoms)
-    #dyn.attach(traj.write, interval=50)
-    dyn.run(1000)
+    dyn.run(100)
     atoms.get_potential_energy()
     return [atoms, np.max(calculator.results['gamma'])]
 
