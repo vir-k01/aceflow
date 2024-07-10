@@ -101,7 +101,7 @@ class ACEMaker(NaiveACENStepFlowMaker):
     md_maker : Maker = None
 
     def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
-        if compositions and structures is None:
+        if compositions is None and structures is None:
             self.data_gen_config.data_generator = None
             if precomputed_data is None:
                 raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
@@ -141,6 +141,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         active_set_flow_outputs = []
         job_list = []
         prev_run_dict = None
+        data_output = None
 
         if compositions is None and structures is None:
             self.data_gen_config.data_generator = None
@@ -149,10 +150,10 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         
         if self.data_gen_config.data_generator:
             data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+            data_output = data.output
             job_list.append(data)
-        else:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+
+        read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
         job_list.append(read_job)
 
         for i in range(len(self.loss_weights)):
