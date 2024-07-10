@@ -109,7 +109,7 @@ class ACEMaker(NaiveACENStepFlowMaker):
             read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
             trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
             train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning=self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
+            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
             train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, trainer_config=self.trainer_config)
             train_active_checker = check_training_output(train_active.output)
             return Flow([read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
