@@ -9,7 +9,7 @@ import yaml
 from typing import Union
 
 @job
-def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, active_data_sets: list = None, trainer_config: TrainConfig = None, prev_run_dict: dict = None) -> str:
+def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, trainer_config: TrainConfig = None, prev_run_dict: dict = None) -> str:
     if isinstance(computed_data_set, dict):
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
     data_set = computed_data_set

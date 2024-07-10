@@ -139,7 +139,6 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         train_checkers = []
         active_set_flows = []
         consolidate_data_jobs = []
-        #active_set_flow_outputs = []
         job_list = []
         prev_run_dict = None
         data_output = None
@@ -170,14 +169,16 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                 active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
                 consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output, active_set_flow.output]))
-                #active_set_flow_outputs.append(active_set_flow.output)
+      
                 for j in range(len(self.loss_weights)):
                     self.trainer_config.loss_weight = self.loss_weights[j]
                     prev_run_dict = train_checkers[-1].output
                     trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
                     train_checkers.append(check_training_output(trainers[-1].output))
+
             job_list.extend(active_set_flows)
             job_list.extend(consolidate_data_jobs)
+
         job_list.extend(trainers)
         job_list.extend(train_checkers)
         return Flow(job_list, output=train_checkers[-1].output, name=self.name)
