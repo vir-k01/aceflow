@@ -141,7 +141,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         active_set_flow_outputs = []
         job_list = []
 
-        if compositions and structures is None:
+        if compositions is None and structures is None:
             self.data_gen_config.data_generator = None
             if precomputed_data is None:
                 raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
