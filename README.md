@@ -63,6 +63,8 @@ flow = ProductionACEMaker(trainer_config=train_config, data_gen_config=data_conf
 This way the both the initial data generation and active learning steps are bypassed. 
 Furthermore, active learning can be done iteratively several times by modifying the ActiveLearningConfig.active_learning_loops arguement to number of iterations needed. This is by default set to 1.
 
+To restart training from an existing output_potential.yaml file, pass the path to this file when calling the make()  method of the ProductionACEMaker. Do note that the potential's shape (i.e., the number and type of basis functions) should be consistent with the options in TrainConfig to pick up training from the file.
+
 Finally, for more advanced pacemaker training configurations (for example using ladder fitting), simply modify the write_inputs function:
 ```
 from aceflow.utils.util import write_inputs
