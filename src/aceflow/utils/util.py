@@ -10,7 +10,7 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
   gpu_index = trainer_config.gpu_index
   chemsys = ['Ba', 'O', 'Ti']
 
-  gpu_index_str = 'None' if gpu_index is None else str(gpu_index)
+  gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
   if reference_energy_dict is None:
       reference_energy_dict = {'Ba': -4.44847687, 'Ti': -4.44848340, 'O': -4.44847511}
   content = f"""
