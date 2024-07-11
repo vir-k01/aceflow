@@ -6,6 +6,9 @@ from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfi
 from aceflow.jobs.data import read_MD_outputs, consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
+from typing import List, Union
+import os
+import yaml
 
 @dataclass
 class NaiveACEFlowMaker(Maker):
@@ -133,7 +136,7 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
     md_maker : Maker = None
     loss_weights = [0.99, 0.3]
 
-    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
+    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None, pretrained_potential: str = None):
 
         trainers = []
         train_checkers = []
@@ -153,6 +156,18 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             data_output = data.output
             job_list.append(data)
 
+        restart_dict = {}
+
+        if pretrained_potential:
+            if isinstance(pretrained_potential, str):
+                pretrained_potential = yaml.load(f, Loader=yaml.FullLoader)
+                restart_dict.update({'potential': pretrained_potential})
+                if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
+                    restart_dict.update({'active_set': pretrained_potential.replace(".yaml", ".asi")})
+                prev_run_dict = restart_dict
+            else:
+                raise ValueError("Pretrained potential must be a path to a yaml file.")
+        
         read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
         consolidate_data_jobs.append(consolidate_data([read_job.output]))
         job_list.append(read_job)
@@ -161,9 +176,9 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             self.trainer_config.loss_weight = self.loss_weights[i]
             if i:
                 prev_run_dict = train_checkers[-1].output
-            self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
+            #self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
             trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
-            train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
+            train_checkers.append(check_training_output(trainers[-1].output))
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
@@ -174,9 +189,9 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                 for j in range(len(self.loss_weights)):
                     self.trainer_config.loss_weight = self.loss_weights[j]
                     prev_run_dict = train_checkers[-1].output
-                    self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
+                    #self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
                     trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
-                    train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
+                    train_checkers.append(check_training_output(trainers[-1].output))
 
             job_list.extend(active_set_flows)
             job_list.extend(consolidate_data_jobs)

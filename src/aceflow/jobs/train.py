@@ -33,7 +33,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     return os.getcwd()
 
 @job
-def check_training_output(prev_run_dir: str, trainer_config : TrainConfig) -> dict:
+def check_training_output(prev_run_dir: str) -> dict:
     output_dict = {}
     df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     if os.path.isfile(prev_run_dir + '/output_potential.yaml'):
@@ -47,5 +47,4 @@ def check_training_output(prev_run_dir: str, trainer_config : TrainConfig) -> di
             output = yaml.load(f, Loader=yaml.FullLoader)
         active_set = get_active_set(prev_run_dir + '/interim_potential_0.yaml', df, is_full=False)
     output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
-    output_dict.update(trainer_config.as_dict())
     return output_dict
