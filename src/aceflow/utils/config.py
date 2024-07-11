@@ -10,6 +10,7 @@ class TrainConfig(MSONable):
     max_steps: int = 2000
     batch_size: int = 200
     gpu_index: int = None
+    name : str = None
 
 
 @dataclass

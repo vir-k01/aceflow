@@ -13,10 +13,6 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     if isinstance(computed_data_set, dict):
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
     data_set = computed_data_set
-    if active_data_sets is not None:
-        for active_data_set in active_data_sets:
-            active_data_set = pd.DataFrame.from_dict(active_data_set)
-            data_set = pd.concat([data_set, active_data_set], axis=0, join="outer", ignore_index=False, keys=None)
     #data_set = pd.concat([computed_data_set, precomputed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(trainer_config)
@@ -37,7 +33,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     return os.getcwd()
 
 @job
-def check_training_output(prev_run_dir: str) -> dict:
+def check_training_output(prev_run_dir: str, trainer_config : TrainConfig) -> dict:
     output_dict = {}
     df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     if os.path.isfile(prev_run_dir + '/output_potential.yaml'):
@@ -51,4 +47,5 @@ def check_training_output(prev_run_dir: str) -> dict:
             output = yaml.load(f, Loader=yaml.FullLoader)
         active_set = get_active_set(prev_run_dir + '/interim_potential_0.yaml', df, is_full=False)
     output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
+    output_dict.update(trainer_config.as_dict())
     return output_dict

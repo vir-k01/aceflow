@@ -161,8 +161,9 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
             self.trainer_config.loss_weight = self.loss_weights[i]
             if i:
                 prev_run_dict = train_checkers[-1].output
+            self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
             trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
-            train_checkers.append(check_training_output(trainers[-1].output))
+            train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
@@ -173,8 +174,9 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                 for j in range(len(self.loss_weights)):
                     self.trainer_config.loss_weight = self.loss_weights[j]
                     prev_run_dict = train_checkers[-1].output
+                    self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
                     trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
-                    train_checkers.append(check_training_output(trainers[-1].output))
+                    train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
 
             job_list.extend(active_set_flows)
             job_list.extend(consolidate_data_jobs)
