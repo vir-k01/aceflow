@@ -80,7 +80,21 @@ def generate_test_points(compositions : list, chemsys : list, iterations : int =
             break
     
     test_compositions = [composition for sublist in test_points for composition in sublist]
+    test_compositions = list(set(test_compositions))
 
-    test_structures = [AseAtomsAdaptor().get_atoms(get_random_packed(composition)) for composition in test_compositions]
+    test_structures = [get_random_packed(composition, vol_exp=1.2) for composition in test_compositions for i in range(5)]
+
+    test_structures_with_oxi = []
+    test_atoms = []
+    for i in range(len(test_structures)):
+        structure = test_structures[i].copy()
+        try:
+            test_structures_with_oxi.append(structure.add_oxidation_state_by_guess())
+        except:
+            test_structures.remove(test_structures[i])
+        if not np.isclose(test_structures_with_oxi[i].charge, 0):
+            test_structures.remove(test_structures[i])
+        test_atoms.append(AseAtomsAdaptor().get_atoms(test_structures[i]))
+        
     #TODO: add functionality to change num atoms in structure
-    return test_structures
+    return test_atoms
