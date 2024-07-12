@@ -25,7 +25,7 @@ from jobflow.managers.local import run_locally
 compositions = ["BaTiO3"] #add more compositions of interest here! The Maker generates amorphous and a series of deformed crystalline structures of these compositions and runs AIMD on them to generate training data.
 precomputed_data = ... #DFT data already computed for problem of interest, in the format ACE expects (pd.DataFrame or dict with keys: energy,ase_atoms,forces)
 structures = ... # can be None, since the flow generates crystalline structures from MP too.
-md_maker = ... #atomate2 MD Maker to run the MD steps. If not given, the default VASPMDMaker will be run for 200 steps of 2fs MD.
+md_maker = ... #atomate2 MD Maker to run the MD steps. If not given, the default VASPMDMaker with the MPMorphMDSetGenerator will be run for 200 steps of 2fs MD.
 static_maker = ... #atomate2 StaticMaker to compute the energies and forces for structures in the active learning loop. If none, the default StaticMaker with an input set consistent with the md_maker will be used.
 
 flow = ProductionACEMaker().make(compositions, precomputed_data, structures)
