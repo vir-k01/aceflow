@@ -106,8 +106,9 @@ def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list,
     test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=max_points)
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
-        if gamma > gamma_max:
+        if gamma > gamma_max and gamma < 10000000:
             active_structures.append(atoms)
+
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=max_structures)
     return [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]

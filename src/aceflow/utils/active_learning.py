@@ -92,7 +92,7 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
     return active_set_inv_filename
 
 
-def select_structures_with_active_set(potential_file: str, active_set: str, dataset: pd.DataFrame, max_structures: int = 200):
+def select_structures_with_active_set(potential_file: str, active_set: str, dataset: pd.DataFrame, max_structures: int = -1):
 
     asi_data = np.load(active_set)
     elements = sorted(asi_data.keys())
@@ -106,11 +106,11 @@ def select_structures_with_active_set(potential_file: str, active_set: str, data
 
 def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
     atoms.set_calculator(calculator)
-    atoms.get_potential_energy()
     T=5000
     dyn = Langevin(atoms, 1 * units.fs, T * units.kB, 0.002)
     dyn.run(100)
-    atoms.get_potential_energy()
+    if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > 10000:
+        return [atoms, 10000000]
     return [atoms, np.max(calculator.results['gamma'])]
 
 
