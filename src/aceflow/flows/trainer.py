@@ -3,11 +3,12 @@ from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
-from aceflow.jobs.data import read_MD_outputs, consolidate_data
+from aceflow.jobs.data import read_MD_outputs, consolidate_data, combine_potentials
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 import os
 import yaml
+import itertools
 
 
 @dataclass
@@ -110,3 +111,41 @@ class ProductionACEMaker(Maker):
         job_list.extend(trainers)
         job_list.extend(train_checkers)
         return Flow(job_list, output=train_checkers[-1].output, name=self.name)
+    
+@dataclass
+class HeiracricalACETrainer(ProductionACEMaker):
+
+    name : str = 'Hierarchical ACE Trainer'
+    pretrained_potential_dict : dict = None
+
+
+    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
+        elements = set()
+        for comp in compositions:
+            elements.update(comp)
+        for struct in structures:
+            elements.update(struct.composition.elements)
+        
+        element_combinations = []
+        for i in range(1, len(elements)+1):
+            element_combinations.extend(itertools.combinations(elements, i))
+            for j in range(1, len(elements)+1):
+                element_combinations.extend(itertools.combinations(elements, j)) #abstract out to N-body potentials
+
+        pretrained_potentials = {}
+        if self.pretrained_potential_dict:
+            for element_combination in element_combinations:
+                if element_combination in self.pretrained_potential_dict:
+                    pretrained_potentials[element_combination] = self.pretrained_potential_dict[element_combination]
+                else:
+                    pretrained_potentials[element_combination] = ProductionACEMaker(trainer_config=self.trainer_config, data_gen_config=self.data_gen_config, \
+                                                                                    active_learning_config=self.active_learning_config, static_maker=self.static_maker, \
+                                                                                    md_maker=self.md_maker, loss_weights=self.loss_weights).make(compositions=[element_combination]).output 
+                    #take compositions as element_combinations from the hull of the elements in the combination
+
+        pretrained_potential = combine_potentials(pretrained_potentials)
+
+        with open("pretrained_potential.yaml", 'w') as f:
+            yaml.dump(pretrained_potential, f)
+
+        return ProductionACEMaker.make(compositions, precomputed_data, structures, pretrained_potential)

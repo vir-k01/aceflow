@@ -109,3 +109,9 @@ def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list,
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
     return [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]
+
+
+@job
+def combine_potentials(potentials: dict):
+    pass
+        
