@@ -36,10 +36,10 @@ def get_composition_along_branches(alpha : list[float], branches : list, chemsys
     return comps
 
 def get_branches_from_endpoints(composition_1, composition_2, chemsys):
-    if type(composition_1) == str:
+    if isinstance(composition_1, str):
         composition_1 = formula_to_dict(composition_1, chemsys=chemsys)
     
-    if type(composition_2) == str:
+    if isinstance(composition_2, str):
         composition_2 = formula_to_dict(composition_2, chemsys=chemsys)
 
     if isinstance(composition_1, Composition):
@@ -86,15 +86,15 @@ def generate_test_points(compositions : list, chemsys : list, iterations : int =
 
     test_structures_with_oxi = []
     test_atoms = []
-    for i in range(len(test_structures)):
-        structure = test_structures[i].copy()
+    for i, test_structure in enumerate(test_structures):
+        structure = test_structure.copy()
         try:
             test_structures_with_oxi.append(structure.add_oxidation_state_by_guess())
         except:
-            test_structures.remove(test_structures[i])
-        if not np.isclose(test_structures_with_oxi[i].charge, 0):
-            test_structures.remove(test_structures[i])
-        test_atoms.append(AseAtomsAdaptor().get_atoms(test_structures[i]))
+            test_structures.remove(test_structure)
+        if not np.isclose(test_structures_with_oxi[-1].charge, 0):
+            test_structures.remove(test_structure)
+        test_atoms.append(AseAtomsAdaptor().get_atoms(test_structure))
         
     #TODO: add functionality to change num atoms in structure
     return test_atoms

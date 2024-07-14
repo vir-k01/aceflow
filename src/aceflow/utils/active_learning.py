@@ -3,22 +3,19 @@ import pandas as pd
 
 from pyace import BBasisConfiguration, ACEBBasisSet, aseatoms_to_atomicenvironment, PyACECalculator
 from pyace.activelearning import compute_B_projections, compute_active_set, compute_active_set_by_batches, \
-    compute_A_active_inverse, compute_extrapolation_grade, compute_number_of_functions, \
-    count_number_total_atoms_per_species_type, save_active_inverse_set, extract_reference_forces_dict
-from pyace.preparedata import sizeof_fmt
+    compute_A_active_inverse, compute_number_of_functions, \
+    count_number_total_atoms_per_species_type, save_active_inverse_set
 
 from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, select_structures_maxvol
-from aceflow.utils.structure_sampler import generate_test_points
 
 from ase.md.langevin import Langevin
-from ase.io.trajectory import Trajectory
 from ase import units
 
 
-def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = False, memory_limit: str ='auto'):
+def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = False, memory_limit: str = 'auto'):
     gamma_tolerance = 1.01
-    maxvol_iters=300
-    maxvol_refinement=5
+    maxvol_iters = 300
+    maxvol_refinement = 5
     memory_limit='auto'
     verbose=True
 
@@ -71,24 +68,24 @@ def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option
             np.savez(f, **{elements_name[st]: v for st, v in A_active_inverse_set.items()})
 
     else:
-            # multiple round maxvol
-            n_batches = len(atomic_env_list) // batch_size
-            (best_gamma, best_active_sets_dict, _) = \
-                compute_active_set_by_batches(
-                    bbasis,
-                    atomic_env_list=atomic_env_list,
-                    structure_ind_list=structure_ind_list,
-                    n_batches=n_batches,
-                    gamma_tolerance=gamma_tolerance,
-                    maxvol_iters=maxvol_iters,
-                    n_refinement_iter=maxvol_refinement,
-                    save_interim_active_set=True,
-                    is_full=is_full,
-                    verbose=verbose
-                )
-            A_active_inverse_set = compute_A_active_inverse(best_active_sets_dict)
-            save_active_inverse_set(active_set_inv_filename, A_active_inverse_set, elements_name=elements_name)
-    
+        # multiple round maxvol
+        n_batches = len(atomic_env_list) // batch_size
+        (best_gamma, best_active_sets_dict, _) = \
+            compute_active_set_by_batches(
+                bbasis,
+                atomic_env_list=atomic_env_list,
+                structure_ind_list=structure_ind_list,
+                n_batches=n_batches,
+                gamma_tolerance=gamma_tolerance,
+                maxvol_iters=maxvol_iters,
+                n_refinement_iter=maxvol_refinement,
+                save_interim_active_set=True,
+                is_full=is_full,
+                verbose=verbose
+            )
+        A_active_inverse_set = compute_A_active_inverse(best_active_sets_dict)
+        save_active_inverse_set(active_set_inv_filename, A_active_inverse_set, elements_name=elements_name)
+
     return active_set_inv_filename
 
 
@@ -112,10 +109,3 @@ def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
     if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > 10000:
         return [atoms, 10000000]
     return [atoms, np.max(calculator.results['gamma'])]
-
-
-
-
-
-
-    

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from monty.json import MSONable
 
 
@@ -39,4 +39,3 @@ class DataGenConfig(MSONable):
                             "KPAR": 1,
                             "NCORE": 8
                         }
-

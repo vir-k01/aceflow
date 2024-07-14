@@ -9,7 +9,7 @@ import pandas as pd
 import os
 
 @job
-def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = None, step_skip: int= 1):
+def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = None, step_skip: int = 1):
     energies = []
     forces = []
     structures = []
@@ -76,7 +76,7 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
 
 @job
 def deferred_static_from_list(maker, structures):
-    if type(structures) is list:
+    if isinstance(structures, list):
         static_jobs = [maker.make(structure) for structure in structures]
         static_outputs = [static_job.output for static_job in static_jobs]
         flow = Flow(static_jobs, output=static_outputs)
@@ -86,9 +86,6 @@ def deferred_static_from_list(maker, structures):
 
 @job
 def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, active_learning_config: ActiveLearningConfig):
-    gamma_max = active_learning_config.gamma_max
-    max_points = active_learning_config.max_points
-    max_structures = active_learning_config.max_structures
     prev_dir = prev_run_dict['dir_name']
     if os.path.isfile(prev_dir + '/output_potential.yaml'):
         potential_file = prev_dir + "/output_potential.yaml"
@@ -103,12 +100,12 @@ def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list,
     base_calculator.set_active_set(active_set)
     active_structures = []
     chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
-    test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=max_points)
+    test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=active_learning_config.max_points)
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
-        if gamma > gamma_max and gamma < 10000000:
+        if gamma > active_learning_config.gamma_max and gamma < 10000000:
             active_structures.append(atoms)
 
     df = pd.DataFrame({'ase_atoms': active_structures})
-    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=max_structures)
+    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
     return [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]

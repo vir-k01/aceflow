@@ -1,7 +1,5 @@
-from typing import List
 import numpy as np
-from pymatgen.io.ase import AseAtomsAdaptor
-from jobflow import Flow, Maker, job
+from jobflow import Flow, Maker
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.structure_gen import get_random_packed
@@ -59,8 +57,6 @@ class DataGenFlowMaker(Maker):
                     md_outputs.append(md_job.output)
                     md_jobs.append(md_job)
             return Flow([*md_jobs], output=md_outputs)
-        else:
-            return None
 
 @dataclass
 class ActiveStructuresFlowMaker(Maker):

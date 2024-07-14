@@ -6,70 +6,12 @@ from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfi
 from aceflow.jobs.data import read_MD_outputs, consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
-from typing import List, Union
 import os
 import yaml
 
-@dataclass
-class NaiveACEFlowMaker(Maker):
-    '''
-    Basic ACE trainer: Wrapper for pacemaker, also calls a series of md jobs on structures (both amorphous using packmol and crystalline, queried from MP). 
-    Any precomputed data can be passed to the trainer too, as long as it is in the format required by pacemaker (pd.DataFrame with columns for energy, ase_atoms, forces and energy_corrected).
-    The flow returns the directory with the output_potential.yaml, training log and reports.
-    '''
-    name : str = 'Naive ACE Trainer'
-    trainer_config: TrainConfig = field(default_factory=lambda: TrainConfig())
-    data_gen_config: DataGenConfig = field(default_factory=lambda: DataGenConfig())
-    md_maker : Maker = None
-
-    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
-        if compositions is None and structures is None:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
-            train_checker = check_training_output(trainer.output)
-            return Flow([read_job, trainer, train_checker], output=train_checker.output, name=self.name)
-        else: 
-            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
-            train_checker = check_training_output(trainer.output)
-            return Flow([data, read_job, trainer, train_checker], output=train_checker.output, name=self.name)
-        
-@dataclass
-class NaiveACENStepFlowMaker(NaiveACEFlowMaker):
-    '''
-    N Step ACE Trainer: same as above, but now does the training in N steps: first with emphasis on forces (kappa=0.99), followed by progressively increasing focus on energies.
-    The flow returns the directory with the output_potential.yaml, training log and reports.
-    '''
-    name : str = 'Naive ACE N-Step Trainer'
-    loss_weights = [0.99, 0.9, 0.3]
-
-    def make(self, compositions: list = None, precomputed_data : pd.DataFrame = None, structures: list = None):
-        train_steps = []
-        train_checkers = []
-        prev_run_dict = None
-        if compositions is None and structures is None:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            for i in range(len(self.loss_weights)):
-                self.trainer_config.loss_weight = self.loss_weights[i]
-                if i:
-                    prev_run_dict = train_checkers[-1].output
-                train_steps.append(naive_train_ACE(read_job.output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
-                train_checkers.append(check_training_output(train_steps[-1].output))
-            return Flow([read_job, *train_steps, *train_checkers], output=train_checkers[-1].output, name=self.name)
-        else: 
-            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs=data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            for i in range(len(self.loss_weights)):
-                self.trainer_config.loss_weight = self.loss_weights[i]
-                if i:
-                    prev_run_dict = train_checkers[-1].output
-                train_steps.append(naive_train_ACE(read_job.output, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
-                train_checkers.append(check_training_output(train_steps[-1].output))
-            return Flow([data, read_job, *train_steps, *train_checkers], output=train_checkers[-1].output, name=self.name)
 
 @dataclass
-class ACEMaker(NaiveACENStepFlowMaker):
+class ProductionACEMaker(Maker):
     '''
     Basic ACE trainer: Wrapper for pacemaker, also calls a series of md jobs on structures (both amorphous using packmol and crystalline, queried from MP). 
     Any precomputed data can be passed to the trainer too, as long as it is in the format required by pacemaker (pd.DataFrame with columns for energy, ase_atoms, forces and energy_corrected).
@@ -102,38 +44,6 @@ class ACEMaker(NaiveACENStepFlowMaker):
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : Maker = None
     md_maker : Maker = None
-
-    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None):
-        if compositions is None and structures is None:
-            self.data_gen_config.data_generator = None
-            if precomputed_data is None:
-                raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
-        if self.data_gen_config.data_generator is None:
-            read_job = read_MD_outputs(precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
-            train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, trainer_config=self.trainer_config)
-            train_active_checker = check_training_output(train_active.output)
-            return Flow([read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
-        else:  
-            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            read_job = read_MD_outputs(md_outputs = data.output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-            trainer = naive_train_ACE(read_job.output, trainer_config=self.trainer_config)
-            train_checker = check_training_output(trainer.output)
-            active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config = self.active_learning_config).make(compositions, prev_run_dict=train_checker.output)
-            train_active = naive_train_ACE(computed_data_set=read_job.output, active_data_set=active_set_flow.output, prev_run_dict=train_checker.output, trainer_config=self.trainer_config)
-            train_active_checker = check_training_output(train_active.output)
-            return Flow([data, read_job, trainer, train_checker, active_set_flow, train_active, train_active_checker], output=train_active_checker.output, name=self.name)
-
-@dataclass
-class ProductionACEMaker(NaiveACENStepFlowMaker):
-    name : str = 'ACE Maker'
-    trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
-    data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
-    active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
-    static_maker : Maker = None
-    md_maker : Maker = None
     loss_weights = [0.99, 0.3]
 
     def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None, pretrained_potential: str = None):
@@ -160,7 +70,8 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
-                pretrained_potential = yaml.load(f, Loader=yaml.FullLoader)
+                with open(pretrained_potential, 'r') as f:
+                    pretrained_potential = yaml.load(f, Loader=yaml.FullLoader)
                 restart_dict.update({'potential': pretrained_potential})
                 if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
                     restart_dict.update({'active_set': pretrained_potential.replace(".yaml", ".asi")})
@@ -172,8 +83,8 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
         consolidate_data_jobs.append(consolidate_data([read_job.output]))
         job_list.append(read_job)
 
-        for i in range(len(self.loss_weights)):
-            self.trainer_config.loss_weight = self.loss_weights[i]
+        for i, loss in enumerate(self.loss_weights):
+            self.trainer_config.loss_weight = loss
             if i:
                 prev_run_dict = train_checkers[-1].output
             #self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
@@ -186,8 +97,8 @@ class ProductionACEMaker(NaiveACENStepFlowMaker):
                 active_set_flows.append(active_set_flow)
                 consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output, active_set_flow.output]))
       
-                for j in range(len(self.loss_weights)):
-                    self.trainer_config.loss_weight = self.loss_weights[j]
+                for j, loss in enumerate(self.loss_weights):
+                    self.trainer_config.loss_weight = loss
                     prev_run_dict = train_checkers[-1].output
                     #self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
                     trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
