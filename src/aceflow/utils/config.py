@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from monty.json import MSONable
 
 
@@ -29,7 +29,7 @@ class DataGenConfig(MSONable):
     max_energy_above_hull : float = 0.1
     md_steps : int = 200
     data_generator : str = 'MD' # set to none if you do not want to generate any new data for training
-    kpoints: dict = {"gamma_only": True}
+    kpoints: dict = field(default_factory=lambda: {"gamma_only": True})
     incar_updates: dict = {
                             "ISPIN": 1, # Do not consider magnetism in AIMD simulations
                             "LREAL": "Auto", # Peform calculation in real space for AIMD due to large unit cell size
