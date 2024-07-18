@@ -23,7 +23,7 @@ class ActiveLearningConfig(MSONable):
 
 @dataclass
 class DataGenConfig(MSONable):
-    step_skip : int = 20
+    step_skip : int = 25
     num_points : int = 5
     temperature : float = 2000
     max_energy_above_hull : float = 0.1
