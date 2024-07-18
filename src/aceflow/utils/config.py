@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from monty.json import MSONable
 
-
 @dataclass
 class TrainConfig(MSONable):
     num_basis : int = 10
@@ -39,3 +38,7 @@ class DataGenConfig(MSONable):
                             "KPAR": 1,
                             "NCORE": 8
                         }
+    
+@dataclass 
+class HeirarchyConfig(MSONable):
+    reference_potentials_dir : str = None
