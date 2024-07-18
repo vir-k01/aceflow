@@ -106,7 +106,7 @@ class ProductionACEMaker(Maker):
                     train_checkers.append(check_training_output(trainers[-1].output))
 
             job_list.extend(active_set_flows)
-            job_list.extend(consolidate_data_jobs)
+        job_list.extend(consolidate_data_jobs)
 
         job_list.extend(trainers)
         job_list.extend(train_checkers)
