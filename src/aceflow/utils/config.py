@@ -4,7 +4,7 @@ from monty.json import MSONable
 
 @dataclass
 class TrainConfig(MSONable):
-    num_basis : int = 10
+    num_basis : int = 500
     cutoff : int = 7
     loss_weight : float = 0.9
     max_steps: int = 2000

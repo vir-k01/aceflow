@@ -28,7 +28,7 @@ class DataGenFlowMaker(Maker):
 
             working_structures = [entry.structure for entry in entries]
             for composition in compositions:
-                working_structures.append(get_random_packed(composition))
+                working_structures.append(get_random_packed(composition, vol_exp=1.2))
         if self.md_maker is None:
             '''self.md_maker = PyACEMDMaker(**{"time_step": 2,
                             "n_steps": self.data_gen_config.md_steps,
@@ -42,7 +42,7 @@ class DataGenFlowMaker(Maker):
             self.maker = update_user_incar_settings(self.maker, self.data_gen_config.incar_updates)
             self.maker = update_user_kpoints_settings(self.maker, self.data_gen_config.kpoints)
         
-        linear_strain = np.linspace(-0.2, 0.2, self.data_gen_config.num_points)
+        linear_strain = np.linspace(-0.25, 0.25, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
         md_jobs = []
         md_outputs = []
@@ -52,7 +52,6 @@ class DataGenFlowMaker(Maker):
                 for deformed_structure in deformed_structures:
                     md_job = self.md_maker.make(deformed_structure.final_structure)
                     md_job.update_metadata({"Type": "AIMD"})
-                    md_job.update_metadata({"mp-id": id})
                     md_job.update_metadata({"Composition": structure.composition.reduced_formula})
                     md_job.update_metadata({"Strain": deformed_structure.strain})
                     md_job.name = f"{structure.composition.reduced_formula}_DataGen_MD"
