@@ -7,6 +7,7 @@ from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_st
 from aceflow.utils.config import ActiveLearningConfig
 import pandas as pd
 import os
+from ase import Atoms
 
 @job
 def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
@@ -74,6 +75,11 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
 @job
 def deferred_static_from_list(maker, structures):
     if isinstance(structures, list):
+        if isinstance(structures, list[Atoms]):
+            structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures]
+        if isinstance(structures, list[dict]):
+            structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures['ase_atoms']]
+
         static_jobs = [maker.make(structure) for structure in structures]
         static_outputs = [static_job.output for static_job in static_jobs]
         flow = Flow(static_jobs, output=static_outputs)

@@ -64,8 +64,7 @@ class DataGenFlowMaker(Maker):
             jobs_list.append(MD_output_reader)
 
             if self.data_gen_config.data_generator == 'Static':
-                static_structures = [AseAtomsAdaptor().get_structure(atoms) for atoms in MD_output_reader.output['ase_atoms']]
-                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=static_structures)
+                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output])
                 output_reader = read_statics_outputs(static_jobs.output)
                 jobs_list.append(static_jobs)
                 jobs_list.append(output_reader)
