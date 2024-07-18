@@ -10,6 +10,7 @@ from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoin
 from dataclasses import dataclass, field
 from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs
 from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
+from pymatgen.io.ase import AseAtomsAdaptor
 
 @dataclass
 class DataGenFlowMaker(Maker):
@@ -45,7 +46,7 @@ class DataGenFlowMaker(Maker):
         
         linear_strain = np.linspace(-0.25, 0.25, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
-        md_jobs = []
+        jobs_list = []
         md_outputs = []
         if working_structures:
             for structure in working_structures:
@@ -57,13 +58,19 @@ class DataGenFlowMaker(Maker):
                     md_job.update_metadata({"Strain": linear_strain[i]})
                     md_job.name = f"{structure.composition.reduced_formula}_DataGen_MD"
                     md_outputs.append(md_job.output)
-                    md_jobs.append(md_job)
-            
-            if self.data_gen_config.data_generator == 'Static':
-                use_statics = True
+                    jobs_list.append(md_job)
 
-            output_reader = read_MD_outputs(md_outputs, step_skip=self.data_gen_config.step_skip, use_statics=use_statics)
-            return Flow([*md_jobs, output_reader], output=output_reader.output)
+            MD_output_reader = read_MD_outputs(md_outputs, step_skip=self.data_gen_config.step_skip)
+            jobs_list.append(MD_output_reader)
+
+            if self.data_gen_config.data_generator == 'Static':
+                static_structures = [AseAtomsAdaptor().get_structure(atoms) for atoms in MD_output_reader.output['ase_atoms']]
+                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=static_structures)
+                output_reader = read_statics_outputs(static_jobs.output)
+                jobs_list.append(static_jobs)
+                jobs_list.append(output_reader)
+
+            return Flow([*jobs_list], output=jobs_list[-1].output)
 
 @dataclass
 class ActiveStructuresFlowMaker(Maker):

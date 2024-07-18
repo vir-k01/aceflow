@@ -9,7 +9,7 @@ import pandas as pd
 import os
 
 @job
-def read_MD_outputs(md_outputs: List = None, step_skip: int = 1, use_statics: bool = False, static_maker: Maker = None):
+def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     energies = []
     forces = []
     structures = []
@@ -22,18 +22,14 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1, use_statics: bo
                 energies.append(trajectory.frame_properties[frame_id]['energy'])
                 forces.append(trajectory.frame_properties[frame_id]['forces'])
                 structures.append(trajectory.get_structure(frame_id))
-    if use_statics:
-        statics = deferred_static_from_list(maker=static_maker, structures=structures)
-        return read_statics_outputs(statics.output)
-    
-    else:
-        output = {
-                'energy': energies,
-                'forces': forces,
-                'ase_atoms': [AseAtomsAdaptor().get_atoms(structure) for structure in structures],
-                'energy_corrected': energies,
-                }
-        return output
+   
+    output = {
+            'energy': energies,
+            'forces': forces,
+            'ase_atoms': [AseAtomsAdaptor().get_atoms(structure) for structure in structures],
+            'energy_corrected': energies,
+            }
+    return output
 
 @job
 def read_statics_outputs(statics: List = None):
