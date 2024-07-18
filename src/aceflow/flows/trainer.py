@@ -62,8 +62,7 @@ class ProductionACEMaker(Maker):
                 raise ValueError("Precomputed data must be provided if no structures or compositions are given.")
         
         if self.data_gen_config.data_generator:
-            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker).make(compositions, structures)
-            data_output = data.output
+            data = DataGenFlowMaker(data_gen_config=self.data_gen_config, md_maker=self.md_maker, static_maker=self.static_maker).make(compositions, structures)
             job_list.append(data)
 
         restart_dict = {}
@@ -79,9 +78,8 @@ class ProductionACEMaker(Maker):
             else:
                 raise ValueError("Pretrained potential must be a path to a yaml file.")
         
-        read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
-        consolidate_data_jobs.append(consolidate_data([read_job.output]))
-        job_list.append(read_job)
+        #read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
+        consolidate_data_jobs.append(consolidate_data([data.output, precomputed_data]))
 
         for i, loss in enumerate(self.loss_weights):
             self.trainer_config.loss_weight = loss

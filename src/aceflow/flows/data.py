@@ -8,7 +8,7 @@ from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoints_settings
 from dataclasses import dataclass, field
-from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs
+from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs
 from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
 
 @dataclass
@@ -16,6 +16,7 @@ class DataGenFlowMaker(Maker):
     name = "Data Generation Flow"
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
     md_maker : MDMaker = None
+    static_maker : StaticMaker = None
 
     def make(self, compositions: list = None, structures : list = None):
 
@@ -57,12 +58,18 @@ class DataGenFlowMaker(Maker):
                     md_job.name = f"{structure.composition.reduced_formula}_DataGen_MD"
                     md_outputs.append(md_job.output)
                     md_jobs.append(md_job)
-            return Flow([*md_jobs], output=md_outputs)
+            
+            if self.data_gen_config.data_generator == 'Static':
+                use_statics = True
+
+            output_reader = read_MD_outputs(md_outputs, step_skip=self.data_gen_config.step_skip, use_statics=use_statics)
+            return Flow([*md_jobs, output_reader], output=output_reader.output)
 
 @dataclass
 class ActiveStructuresFlowMaker(Maker):
     name = "Active Structures Flow"
     static_maker : Maker = None
+    data_gen_config : DataGenConfig = None
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
     def make(self, compositions: list, prev_run_dict: dict):

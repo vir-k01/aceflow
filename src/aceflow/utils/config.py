@@ -28,7 +28,7 @@ class DataGenConfig(MSONable):
     temperature : float = 2000
     max_energy_above_hull : float = 0.1
     md_steps : int = 200
-    data_generator : str = 'MD' # set to none if you do not want to generate any new data for training
+    data_generator : str = 'MD' # 'MD' or 'Static', the corresponding input set is used to generate data. If None, no extra data is generated.
     kpoints: dict = field(default_factory=lambda: {"gamma_only": True})
     incar_updates: dict = field(default_factory=lambda:{
                             "ISPIN": 1, # Do not consider magnetism in AIMD simulations

@@ -1,4 +1,4 @@
-from jobflow import job, Response, Flow
+from jobflow import job, Response, Flow, Maker
 from typing import List, Union
 from pymatgen.io.ase import AseAtomsAdaptor
 from pyace import PyACECalculator
@@ -9,14 +9,10 @@ import pandas as pd
 import os
 
 @job
-def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame = None, step_skip: int = 1):
+def read_MD_outputs(md_outputs: List = None, step_skip: int = 1, use_statics: bool = False, static_maker: Maker = None):
     energies = []
     forces = []
     structures = []
-    if precomputed_dataset:
-        energies = precomputed_dataset['energy']
-        forces = precomputed_dataset['forces']
-        structures = precomputed_dataset['ase_atoms']
     output = {}
     if md_outputs:
         for md_output in md_outputs:
@@ -25,14 +21,19 @@ def read_MD_outputs(md_outputs: List = None, precomputed_dataset: pd.DataFrame =
             for frame_id in range(0, len(trajectory.frame_properties), step_skip):
                 energies.append(trajectory.frame_properties[frame_id]['energy'])
                 forces.append(trajectory.frame_properties[frame_id]['forces'])
-                structures.append(AseAtomsAdaptor().get_atoms(trajectory.get_structure(frame_id)))
-    output = {
-            'energy': energies,
-            'forces': forces,
-            'ase_atoms': structures,
-            'energy_corrected': energies,
-            }
-    return output
+                structures.append(trajectory.get_structure(frame_id))
+    if use_statics:
+        statics = deferred_static_from_list(maker=static_maker, structures=structures)
+        return read_statics_outputs(statics.output)
+    
+    else:
+        output = {
+                'energy': energies,
+                'forces': forces,
+                'ase_atoms': [AseAtomsAdaptor().get_atoms(structure) for structure in structures],
+                'energy_corrected': energies,
+                }
+        return output
 
 @job
 def read_statics_outputs(statics: List = None):
