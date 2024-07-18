@@ -12,7 +12,7 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
 
     gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
     if reference_energy_dict is None:
-        reference_energy_dict = {'Ba': -4.44847687, 'Ti': -4.44848340, 'O': -4.44847511, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611}
+        reference_energy_dict = {'Ba': -0.13385613, 'Ti': -1.21095265, 'O': -0.05486302, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611}
     content = f"""
   cutoff: {cutoff} # cutoff for neighbour list construction
   seed: 42  # random seed

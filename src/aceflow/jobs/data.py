@@ -75,10 +75,10 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
 @job
 def deferred_static_from_list(maker, structures):
     if isinstance(structures, list):
-        if isinstance(structures, List[Atoms]):
+        if isinstance(structures[0], Atoms):
             structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures]
-        if isinstance(structures, List[dict]):
-            structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures['ase_atoms']]
+        if isinstance(structures[0], dict):
+            structures = [AseAtomsAdaptor().get_structure(structure) for structure_dict in structures for structure in structure_dict['ase_atoms']]
 
         static_jobs = [maker.make(structure) for structure in structures]
         static_outputs = [static_job.output for static_job in static_jobs]
