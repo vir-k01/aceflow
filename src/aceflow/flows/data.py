@@ -49,11 +49,11 @@ class DataGenFlowMaker(Maker):
         if working_structures:
             for structure in working_structures:
                 deformed_structures = _apply_strain_to_structure(structure, deformation_matrices)
-                for deformed_structure in deformed_structures:
+                for i, deformed_structure in enumerate(deformed_structures):
                     md_job = self.md_maker.make(deformed_structure.final_structure)
                     md_job.update_metadata({"Type": "AIMD"})
                     md_job.update_metadata({"Composition": structure.composition.reduced_formula})
-                    md_job.update_metadata({"Strain": deformed_structure.strain})
+                    md_job.update_metadata({"Strain": linear_strain[i]})
                     md_job.name = f"{structure.composition.reduced_formula}_DataGen_MD"
                     md_outputs.append(md_job.output)
                     md_jobs.append(md_job)
