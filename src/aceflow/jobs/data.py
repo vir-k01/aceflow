@@ -1,13 +1,12 @@
 from jobflow import job, Response, Flow, Maker
 from typing import List, Union
-from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
 from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 from aceflow.utils.config import ActiveLearningConfig
 import pandas as pd
 import os
-from ase import Atoms
 
 @job
 def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
@@ -77,7 +76,7 @@ def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
 @job
 def deferred_static_from_list(maker, structures):
     if isinstance(structures, list):
-        if isinstance(structures[0], Atoms):
+        if isinstance(structures[0], MSONAtoms):
             structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures]
         if isinstance(structures[0], dict):
             structures = [AseAtomsAdaptor().get_structure(structure) for structure_dict in structures for structure in structure_dict['ase_atoms']]
