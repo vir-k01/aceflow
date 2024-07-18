@@ -23,13 +23,13 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
         with open("continue.yaml", 'w') as f:
             yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
         #if prev_run_status == 'complete':
-        subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True, check=True)
+        subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)
         #else:
         #    naive_train_ACE(computed_data_set, num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index, prev_run_dict)
         #    write_input(num_basis, cutoff, loss_weight, batch_size, gpu_index, max_steps=100)
         #    subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)e)
     else:
-        subprocess.run("pacemaker input.yaml", shell=True, check=True)
+        subprocess.run("pacemaker input.yaml", shell=True)
     return os.getcwd()
 
 @job
