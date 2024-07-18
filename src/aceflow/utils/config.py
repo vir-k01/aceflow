@@ -30,7 +30,7 @@ class DataGenConfig(MSONable):
     md_steps : int = 200
     data_generator : str = 'MD' # set to none if you do not want to generate any new data for training
     kpoints: dict = field(default_factory=lambda: {"gamma_only": True})
-    incar_updates: dict = {
+    incar_updates: dict = field(default_factory=lambda:{
                             "ISPIN": 1, # Do not consider magnetism in AIMD simulations
                             "LREAL": "Auto", # Peform calculation in real space for AIMD due to large unit cell size
                             "LAECHG": False, # Don't need AECCAR for AIMD
@@ -39,4 +39,4 @@ class DataGenConfig(MSONable):
                             "GGA": "PS", # Just let VASP decide based on POTCAR - the default, PS yields the error below
                             "KPAR": 1,
                             "NCORE": 8
-                        }
+                        })
