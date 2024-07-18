@@ -17,16 +17,17 @@ class TrainConfig(MSONable):
 class ActiveLearningConfig(MSONable):
     active_learning_loops : int = 1
     max_points : int = 500
-    max_structures : int = 200
-    gamma_max : int = 5
+    max_structures : int = 500
+    gamma_max : int = 1
 
 
 @dataclass
 class DataGenConfig(MSONable):
-    step_skip : int = 1
+    step_skip : int = 20
     num_points : int = 5
     temperature : float = 2000
-    md_steps : int = 10
+    max_energy_above_hull : float = 0.1
+    md_steps : int = 200
     data_generator : str = 'MD' # set to none if you do not want to generate any new data for training
     kpoints: dict = {"gamma_only": True}
     incar_updates: dict = {

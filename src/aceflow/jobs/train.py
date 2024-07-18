@@ -18,7 +18,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     write_input(trainer_config)
     if prev_run_dict is not None:
         #data_set.to_pickle(prev_dir + "/data.pckl.gzip", compression='gzip', protocol=4)
-        potential = prev_run_dict['potential']
+        potential = prev_run_dict['interim_potential']
         #prev_run_status = prev_run_dict['status']
         with open("continue.yaml", 'w') as f:
             yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
@@ -43,8 +43,10 @@ def check_training_output(prev_run_dir: str) -> dict:
         active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=False)
     else:
         output_dict.update({'status': 'incomplete'})
-        with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
-            output = yaml.load(f, Loader=yaml.FullLoader)
         active_set = get_active_set(prev_run_dir + '/interim_potential_0.yaml', df, is_full=False)
-    output_dict.update({'potential': output, 'active_set': active_set,'dir_name': prev_run_dir})
+        output = None
+    with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
+        interim = yaml.load(f, Loader=yaml.FullLoader)
+        
+    output_dict.update({'output_potential': output, 'interim_potential': interim, 'active_set': active_set, 'dir_name': prev_run_dir})
     return output_dict

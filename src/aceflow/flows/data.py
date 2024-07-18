@@ -24,7 +24,7 @@ class DataGenFlowMaker(Maker):
             working_structures.extend(structures)
         if compositions:
             with MPRester() as mpr:
-                entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, 0)})
+                entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, self.data_gen_config.max_energy_above_hull)})
 
             working_structures = [entry.structure for entry in entries]
             for composition in compositions:
@@ -51,8 +51,10 @@ class DataGenFlowMaker(Maker):
                 deformed_structures = _apply_strain_to_structure(structure, deformation_matrices)
                 for deformed_structure in deformed_structures:
                     md_job = self.md_maker.make(deformed_structure.final_structure)
+                    md_job.update_metadata({"Type": "AIMD"})
                     md_job.update_metadata({"mp-id": id})
                     md_job.update_metadata({"Composition": structure.composition.reduced_formula})
+                    md_job.update_metadata({"Strain": deformed_structure.strain})
                     md_job.name = f"{structure.composition.reduced_formula}_DataGen_MD"
                     md_outputs.append(md_job.output)
                     md_jobs.append(md_job)
