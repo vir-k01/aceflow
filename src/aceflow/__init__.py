@@ -7,3 +7,4 @@ from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from aceflow.flows.trainer import ProductionACEMaker
 from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
 from aceflow.core.model import TrainedPotential
+from aceflow.schemas.core import ACETrainerTaskDoc, ACEDataTaskDoc

@@ -54,7 +54,7 @@ def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None)
     #dataset = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     with open(prev_run_dir + '/log.txt') as f:
         log = f.readlines()
-    doc_data = {'log_file': log,
+    doc_data = {'log_file': {'log': log},
                 'trainer_config': trainer_config,
                 'trained_potential': trained_potential}
 
