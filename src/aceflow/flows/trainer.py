@@ -10,7 +10,6 @@ from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 import os
 from typing import Union
-from pathlib import Path
 
 
 @dataclass
@@ -49,7 +48,7 @@ class ProductionACEMaker(Maker):
     md_maker : MDMaker = None
     loss_weights = [0.99, 0.3]
 
-    def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str, Path] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
         trainers = []
         train_checkers = []
@@ -69,7 +68,7 @@ class ProductionACEMaker(Maker):
             job_list.append(data)
             data_output = data.output
         
-        if not isinstance(precomputed_data, Union[str, Path]):
+        if not isinstance(precomputed_data, str):
             try:
                 precomputed_data_path = os.getcwd() + '/precomputed_data.pckl.gzip'
                 pd.to_pickle(precomputed_data, precomputed_data_path, compression='gzip', protocol=4)
