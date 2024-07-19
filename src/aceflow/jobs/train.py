@@ -2,11 +2,10 @@ from jobflow import job
 import pandas as pd
 import subprocess
 from aceflow.utils.util import write_input
-from aceflow.core.active_learning import get_active_set
+from aceflow.schemas.core import ACETrainerTaskDoc
 from aceflow.utils.config import TrainConfig
 from aceflow.core.model import TrainedPotential
 import os
-import yaml
 from typing import Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 
@@ -47,8 +46,18 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     
     return os.getcwd()
 
-@job
+@job(output_schema=ACETrainerTaskDoc)
 def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None) -> TrainedPotential:
     trained_potential = TrainedPotential(train_dir = prev_run_dir, trainer_config = trainer_config)
     trained_potential.read_training_dir()
-    return trained_potential
+
+    #dataset = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
+    with open(prev_run_dir + '/log.txt') as f:
+        log = f.readlines()
+    doc_data = {'log_file': log,
+                'trainer_config': trainer_config,
+                'trained_potential': trained_potential}
+
+    doc = ACETrainerTaskDoc(**doc_data)
+    doc.task_label = trainer_config.name
+    return doc

@@ -7,10 +7,11 @@ from aceflow.core.active_learning import psuedo_equilibrate_and_test, select_str
 from aceflow.utils.config import ActiveLearningConfig
 from aceflow.utils.cleaner import dataframe_to_ace_dict
 from aceflow.core.model import TrainedPotential
+from aceflow.schemas.core import ACEDataTaskDoc
 import pandas as pd
 import os
 
-@job(acedata='acedata')
+@job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     energies = []
     forces = []
@@ -30,7 +31,11 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
             'ase_atoms': [AseAtomsAdaptor().get_atoms(structure) for structure in structures],
             'energy_corrected': energies,
             }
-    return {'acedata': data}
+    
+    doc = ACEDataTaskDoc(**{'acedata': data})
+    doc.task_label = 'MD Outputs'
+    return doc
+
 
 @job(acedata='acedata')
 def read_statics_outputs(statics: List = None):
@@ -49,7 +54,10 @@ def read_statics_outputs(statics: List = None):
             'ase_atoms': structures,
             'energy_corrected': energies,
             }
-    return {'acedata': data}
+    
+    doc = ACEDataTaskDoc(**{'acedata': data})
+    doc.task_label = 'Static Outputs'
+    return doc
 
 
 @job(acedata='acedata')
@@ -69,7 +77,10 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
     data = {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
-    return {'acedata': data}
+
+    doc = ACEDataTaskDoc(**{'acedata': data})
+    doc.task_label = 'Consolidated Data for ACE Training'
+    return doc
 
 @job
 def deferred_static_from_list(maker, structures):
@@ -107,4 +118,8 @@ def test_potential_in_restricted_space(trained_potential: TrainedPotential, comp
 
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
-    return {'acedata': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
+
+    data = {'acedata': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
+    doc = ACEDataTaskDoc(**{'acedata': data})
+    doc.task_label = 'Active Structures Generation'
+    return doc
