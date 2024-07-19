@@ -1,15 +1,16 @@
 from dataclasses import dataclass, field
 from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
+from atomate2.vasp.jobs.core import StaticMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
 from aceflow.core.model import TrainedPotential
-from aceflow.jobs.data import read_MD_outputs, consolidate_data
+from aceflow.jobs.data import consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 import os
-import yaml
 from typing import Union
+from pathlib import Path
 
 
 @dataclass
@@ -44,11 +45,11 @@ class ProductionACEMaker(Maker):
     trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
-    static_maker : Maker = None
-    md_maker : Maker = None
+    static_maker : StaticMaker = None
+    md_maker : MDMaker = None
     loss_weights = [0.99, 0.3]
 
-    def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str, Path] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
         trainers = []
         train_checkers = []
@@ -68,11 +69,12 @@ class ProductionACEMaker(Maker):
             job_list.append(data)
             data_output = data.output
         
-        '''if isinstance(precomputed_data, str):
+        if not isinstance(precomputed_data, Union[str, Path]):
             try:
-                precomputed_data = pd.read_pickle(precomputed_data, compression='gzip').to_dict(orient='list')
+                precomputed_data_path = os.getcwd() + '/precomputed_data.pckl.gzip'
+                pd.to_pickle(precomputed_data, precomputed_data_path, compression='gzip', protocol=4)
             except:
-                raise ValueError("Precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame.")'''
+                raise ValueError("Due to JobStore issues, precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
     
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
 

@@ -24,22 +24,21 @@ class TrainedPotential(MSONable):
         with open(filename, 'w') as f:
             yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
     
-    def read_training_dir(self, train_dir: str, dataset: pd.DataFrame = None):
-        self.train_dir = train_dir
+    def read_training_dir(self, dataset: pd.DataFrame = None):
 
         if dataset is None:
             try:
-                dataset = pd.read_pickle(train_dir + '/data.pckl.gzip', compression='gzip')
+                dataset = pd.read_pickle(self.train_dir + '/data.pckl.gzip', compression='gzip')
             except:
                 raise FileNotFoundError("No dataset found in the training directory.")
         
-        if os.path.isfile(train_dir + '/output_potential.yaml'):
-            self.output_potential = self.read_potential(train_dir + '/output_potential.yaml')
+        if os.path.isfile(self.train_dir + '/output_potential.yaml'):
+            self.output_potential = self.read_potential(self.train_dir + '/output_potential.yaml')
             self.status = 'complete'
-            active_set_file = get_active_set(train_dir + '/output_potential.yaml', dataset=dataset, is_full=False)
+            active_set_file = get_active_set(self.train_dir + '/output_potential.yaml', dataset=dataset, is_full=False)
         else:
             self.status = 'incomplete'
-            active_set_file = get_active_set(train_dir + '/interim_potential_0.yaml', dataset=dataset, is_full=False)
+            active_set_file = get_active_set(self.train_dir + '/interim_potential_0.yaml', dataset=dataset, is_full=False)
         
         self.active_set_file = active_set_file
-        self.interim_potential = self.read_potential(train_dir + '/interim_potential_0.yaml')
+        self.interim_potential = self.read_potential(self.train_dir + '/interim_potential_0.yaml')

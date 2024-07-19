@@ -49,22 +49,6 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
 
 @job
 def check_training_output(prev_run_dir: str) -> TrainedPotential:
-    trained_potential = TrainedPotential()
-    trained_potential.train_dir = prev_run_dir
-    '''output_dict = {}
-    df = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
-    if os.path.isfile(prev_run_dir + '/output_potential.yaml'):
-        output_dict.update({'status': 'complete'})
-        with open(prev_run_dir + '/output_potential.yaml', 'r') as f:
-            output = yaml.load(f, Loader=yaml.FullLoader)
-        active_set = get_active_set(prev_run_dir + '/output_potential.yaml', df, is_full=False)
-    else:
-        output_dict.update({'status': 'incomplete'})
-        active_set = get_active_set(prev_run_dir + '/interim_potential_0.yaml', df, is_full=False)
-        output = None
-    with open(prev_run_dir + '/interim_potential_0.yaml', 'r') as f:
-        interim = yaml.load(f, Loader=yaml.FullLoader)
-        
-    output_dict.update({'output_potential': output, 'interim_potential': interim, 'active_set': active_set, 'dir_name': prev_run_dir})'''
-    trained_potential.read_training_dir(prev_run_dir)
+    trained_potential = TrainedPotential(train_dir = prev_run_dir)
+    trained_potential.read_training_dir()
     return trained_potential
