@@ -28,7 +28,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
 
     if trained_potential is not None:
         potential = trained_potential['output_potential']
-        trained_potential.dump_potential(potential, 'continue.yaml')
+        TrainedPotential().dump_potential(potential, 'continue.yaml')
         #prev_run_status = prev_run_dict['status']
 
         #with open("continue.yaml", 'w') as f:
