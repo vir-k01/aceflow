@@ -54,7 +54,7 @@ def read_statics_outputs(statics: List = None):
 
 
 @job(acedata='acedata')
-def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
+def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
         
     energies = []
     forces = []
@@ -62,7 +62,8 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
     for datum in data:
         if isinstance(datum, pd.DataFrame):
             datum = datum.to_dict(orient='list')
-            #datum = dataframe_to_ace_dict(datum)
+        if isinstance(datum, str):
+            datum = pd.read_pickle(datum, compression='gzip').to_dict(orient='list')
         if datum is None:
             continue
         energies.extend(datum['energy'])

@@ -68,11 +68,11 @@ class ProductionACEMaker(Maker):
             job_list.append(data)
             data_output = data.output
         
-        if isinstance(precomputed_data, str):
+        '''if isinstance(precomputed_data, str):
             try:
                 precomputed_data = pd.read_pickle(precomputed_data, compression='gzip').to_dict(orient='list')
             except:
-                raise ValueError("Precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame.")
+                raise ValueError("Precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame.")'''
     
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
 
