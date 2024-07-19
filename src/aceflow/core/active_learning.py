@@ -12,7 +12,7 @@ from ase.md.langevin import Langevin
 from ase import units
 
 
-def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = False, memory_limit: str = 'auto'):
+def get_active_set(potential_file: str, dataset: pd.DataFrame, batch_size_option: str = 'auto', is_full: bool = False, memory_limit: str = 'auto') -> str:
     gamma_tolerance = 1.01
     maxvol_iters = 300
     maxvol_refinement = 5

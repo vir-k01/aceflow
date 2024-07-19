@@ -3,9 +3,10 @@ from typing import List, Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
-from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
+from aceflow.core.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 from aceflow.utils.config import ActiveLearningConfig
 from aceflow.utils.cleaner import dataframe_to_ace_dict
+from aceflow.core.model import TrainedPotential
 import pandas as pd
 import os
 
@@ -60,12 +61,14 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
     structures = []
     for datum in data:
         if isinstance(datum, pd.DataFrame):
-            datum = dataframe_to_ace_dict(datum)
+            datum = datum.to_dict(orient='list')
+            #datum = dataframe_to_ace_dict(datum)
         if datum is None:
             continue
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
+    print(len(energies))
     data = {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
     return {'acedata': data}
 
@@ -90,16 +93,13 @@ def deferred_static_from_list(maker, structures):
         return maker.make.original(maker, structures)
 
 @job
-def test_potential_in_restricted_space(prev_run_dict : dict, compositions: list, active_learning_config: ActiveLearningConfig):
-    prev_dir = prev_run_dict['dir_name']
+def test_potential_in_restricted_space(trained_potential: TrainedPotential, compositions: list, active_learning_config: ActiveLearningConfig):
+
+    prev_dir = trained_potential.train_dir
     if os.path.isfile(prev_dir + '/output_potential.yaml'):
         potential_file = prev_dir + "/output_potential.yaml"
     else:
         potential_file = prev_dir + '/interim_potential_0.yaml'
-    if os.path.isfile(potential_file.replace(".yaml", ".asi")):
-        active_set = potential_file.replace(".yaml", ".asi")
-    else:
-        active_set = potential_file.replace(".yaml", ".asi.nonlinear")
     active_set = potential_file.replace(".yaml", ".asi")
     base_calculator = PyACECalculator(potential_file)
     base_calculator.set_active_set(active_set)

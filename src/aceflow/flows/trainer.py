@@ -3,11 +3,13 @@ from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
 from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig
+from aceflow.core.model import TrainedPotential
 from aceflow.jobs.data import read_MD_outputs, consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 import os
 import yaml
+from typing import Union
 
 
 @dataclass
@@ -46,15 +48,15 @@ class ProductionACEMaker(Maker):
     md_maker : Maker = None
     loss_weights = [0.99, 0.3]
 
-    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None, pretrained_potential: str = None):
+    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
         trainers = []
         train_checkers = []
         active_set_flows = []
         consolidate_data_jobs = []
         job_list = []
-        prev_run_dict = None
         data_output = None
+        trained_potential = None
 
         if compositions is None and structures is None:
             self.data_gen_config.data_generator = None
@@ -73,28 +75,29 @@ class ProductionACEMaker(Maker):
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
-                with open(pretrained_potential, 'r') as f:
-                    pretrained_potential = yaml.load(f, Loader=yaml.FullLoader)
-                restart_dict.update({'potential': pretrained_potential})
+                trained_potential = TrainedPotential()
+                trained_potential.read_potential(pretrained_potential)
                 if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
-                    restart_dict.update({'active_set': pretrained_potential.replace(".yaml", ".asi")})
-                prev_run_dict = restart_dict
+                    trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
+
+            if isinstance(pretrained_potential, TrainedPotential):
+                trained_potential = pretrained_potential
             else:
-                raise ValueError("Pretrained potential must be a path to a yaml file.")
+                raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")
         
         #read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
 
         for i, loss in enumerate(self.loss_weights):
             self.trainer_config.loss_weight = loss
             if i:
-                prev_run_dict = train_checkers[-1].output
+                trained_potential = train_checkers[-1].output
             #self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
-            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.acedata, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
+            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.acedata, trainer_config=self.trainer_config, trained_potential=trained_potential))
             train_checkers.append(check_training_output(trainers[-1].output))
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
-                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
+                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, trained_potential=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
                 consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output.acedata, active_set_flow.output]))
       

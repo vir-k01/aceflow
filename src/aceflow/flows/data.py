@@ -10,6 +10,7 @@ from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoin
 from dataclasses import dataclass, field
 from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs
 from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
+from aceflow.core.model import TrainedPotential
 from pymatgen.io.ase import AseAtomsAdaptor
 
 @dataclass
@@ -78,9 +79,9 @@ class ActiveStructuresFlowMaker(Maker):
     data_gen_config : DataGenConfig = None
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
-    def make(self, compositions: list, prev_run_dict: dict):
+    def make(self, compositions: list, trained_potential: TrainedPotential):
 
-        active_structures = test_potential_in_restricted_space(prev_run_dict, compositions, active_learning_config=self.active_learning_config)
+        active_structures = test_potential_in_restricted_space(trained_potential, compositions, active_learning_config=self.active_learning_config)
         structures = active_structures.output
         if self.static_maker is None:
             self.static_maker = StaticMaker()
