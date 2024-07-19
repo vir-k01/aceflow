@@ -41,6 +41,5 @@ class TrainedPotential(MSONable):
             self.status = 'incomplete'
             active_set_file = get_active_set(train_dir + '/interim_potential_0.yaml', dataset=dataset, is_full=False)
         
-        self.active_set = active_set_file
+        self.active_set_file = active_set_file
         self.interim_potential = self.read_potential(train_dir + '/interim_potential_0.yaml')
-        self.active_set = self.read_potential(train_dir + '/interim_potential_0.asi')
