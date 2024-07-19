@@ -5,6 +5,7 @@ from pyace import PyACECalculator
 from aceflow.utils.structure_sampler import generate_test_points
 from aceflow.utils.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
 from aceflow.utils.config import ActiveLearningConfig
+from aceflow.utils.cleaner import dataframe_to_ace_dict
 import pandas as pd
 import os
 
@@ -58,6 +59,8 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
     forces = []
     structures = []
     for datum in data:
+        if isinstance(datum, pd.DataFrame):
+            datum = dataframe_to_ace_dict(datum)
         if datum is None:
             continue
         energies.extend(datum['energy'])
