@@ -67,8 +67,8 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
     print(len(energies))
-    return {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
-
+    data = {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
+    return {'data': data}
 
 @job
 def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
