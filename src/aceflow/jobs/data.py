@@ -52,7 +52,7 @@ def read_statics_outputs(statics: List = None):
     return output
 
 
-@job(data='data')
+@job(acedata='acedata')
 def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         
     energies = []
@@ -68,7 +68,7 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         structures.extend(datum['ase_atoms'])
     print(len(energies))
     data = {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
-    return {'data': data}
+    return {'acedata': data}
 
 @job
 def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):

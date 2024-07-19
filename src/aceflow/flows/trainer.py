@@ -89,14 +89,14 @@ class ProductionACEMaker(Maker):
             if i:
                 prev_run_dict = train_checkers[-1].output
             #self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
-            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.data, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
+            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.acedata, trainer_config=self.trainer_config, prev_run_dict=prev_run_dict))
             train_checkers.append(check_training_output(trainers[-1].output))
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
                 active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, prev_run_dict=train_checkers[-1].output)
                 active_set_flows.append(active_set_flow)
-                consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output, active_set_flow.output]))
+                consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output.acedata, active_set_flow.output]))
       
                 for j, loss in enumerate(self.loss_weights):
                     self.trainer_config.loss_weight = loss
