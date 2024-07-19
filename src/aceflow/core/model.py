@@ -3,7 +3,7 @@ from monty.json import MSONable
 import yaml
 import os
 from aceflow.core.active_learning import get_active_set
-import pnadas as pd
+import pandas as pd
 
 @dataclass
 class TrainedPotential(MSONable):
