@@ -52,7 +52,7 @@ def read_statics_outputs(statics: List = None):
     return output
 
 
-@job
+@job(data='data')
 def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         
     energies = []
@@ -66,6 +66,7 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
+    print(len(energies))
     return {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
 
 
