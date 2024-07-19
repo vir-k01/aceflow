@@ -23,12 +23,11 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
         computed_data_set['ase_atoms'] = processed_atoms
 
     data_set = computed_data_set
-    #data_set = pd.concat([computed_data_set, precomputed_dataset], axis=0, join="outer", ignore_index=False, keys=None)
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(trainer_config)
 
     if trained_potential is not None:
-        potential = trained_potential.output_potential
+        potential = trained_potential['output_potential']
         trained_potential.dump_potential(potential, 'continue.yaml')
         #prev_run_status = prev_run_dict['status']
 
