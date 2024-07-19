@@ -10,12 +10,11 @@ from aceflow.core.model import TrainedPotential
 import pandas as pd
 import os
 
-@job
+@job(acedata='acedata')
 def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     energies = []
     forces = []
     structures = []
-    output = {}
     if md_outputs:
         for md_output in md_outputs:
             #trajectory = md_output.vasp_objects['trajectory']
@@ -25,15 +24,15 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
                 forces.append(trajectory.frame_properties[frame_id]['forces'])
                 structures.append(trajectory.get_structure(frame_id))
    
-    output = {
+    data = {
             'energy': energies,
             'forces': forces,
             'ase_atoms': [AseAtomsAdaptor().get_atoms(structure) for structure in structures],
             'energy_corrected': energies,
             }
-    return output
+    return {'acedata': data}
 
-@job
+@job(acedata='acedata')
 def read_statics_outputs(statics: List = None):
     energies = []
     forces = []
@@ -44,13 +43,13 @@ def read_statics_outputs(statics: List = None):
                 energies.append(static.output.energy)
                 forces.append(static.output.forces)
                 structures.append(AseAtomsAdaptor().get_atoms(static.output.structure))
-    output = {
+    data = {
             'energy': energies,
             'forces': forces,
             'ase_atoms': structures,
             'energy_corrected': energies,
             }
-    return output
+    return {'acedata': data}
 
 
 @job(acedata='acedata')
@@ -73,11 +72,6 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
     return {'acedata': data}
 
 @job
-def read_pseudo_equilibration_outputs(outputs: pd.DataFrame):
-    outputs = {'structures': AseAtomsAdaptor().get_structure(atoms) for atoms in outputs['ase_atoms']}
-    return outputs
-
-@job
 def deferred_static_from_list(maker, structures):
     if isinstance(structures, list):
         if isinstance(structures[0], MSONAtoms):
@@ -92,7 +86,7 @@ def deferred_static_from_list(maker, structures):
     else:
         return maker.make.original(maker, structures)
 
-@job
+@job(acedata='acedata')
 def test_potential_in_restricted_space(trained_potential: TrainedPotential, compositions: list, active_learning_config: ActiveLearningConfig):
 
     prev_dir = trained_potential.train_dir
@@ -113,4 +107,4 @@ def test_potential_in_restricted_space(trained_potential: TrainedPotential, comp
 
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
-    return [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]
+    return {'acedata': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}

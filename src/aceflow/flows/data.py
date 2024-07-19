@@ -65,12 +65,12 @@ class DataGenFlowMaker(Maker):
             jobs_list.append(MD_output_reader)
 
             if self.data_gen_config.data_generator == 'Static':
-                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output])
+                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output.acedata])
                 output_reader = read_statics_outputs(static_jobs.output)
                 jobs_list.append(static_jobs)
                 jobs_list.append(output_reader)
 
-            return Flow([*jobs_list], output=jobs_list[-1].output)
+            return Flow([*jobs_list], output=jobs_list[-1].output.acedata)
 
 @dataclass
 class ActiveStructuresFlowMaker(Maker):
@@ -82,11 +82,11 @@ class ActiveStructuresFlowMaker(Maker):
     def make(self, compositions: list, trained_potential: TrainedPotential):
 
         active_structures = test_potential_in_restricted_space(trained_potential, compositions, active_learning_config=self.active_learning_config)
-        structures = active_structures.output
+        structures = active_structures.output.acedata
         if self.static_maker is None:
             self.static_maker = StaticMaker()
             self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)
             self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
         static_jobs = deferred_static_from_list(self.static_maker, structures)
         output_reader = read_statics_outputs(static_jobs.output)
-        return Flow([active_structures, static_jobs, output_reader], output=output_reader.output)
+        return Flow([active_structures, static_jobs, output_reader], output=output_reader.output.acedata)
