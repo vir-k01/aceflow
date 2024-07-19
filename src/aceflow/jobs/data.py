@@ -18,8 +18,8 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     structures = []
     if md_outputs:
         for md_output in md_outputs:
-            #trajectory = md_output.vasp_objects['trajectory']
-            trajectory = md_output.forcefield_objects['trajectory']
+            trajectory = md_output.vasp_objects['trajectory']
+            #trajectory = md_output.forcefield_objects['trajectory']
             for frame_id in range(0, len(trajectory.frame_properties), step_skip):
                 energies.append(trajectory.frame_properties[frame_id]['energy'])
                 forces.append(trajectory.frame_properties[frame_id]['forces'])
@@ -73,6 +73,10 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
             datum = pd.read_pickle(datum, compression='gzip').to_dict(orient='list')
         if datum is None:
             continue
+        if not isinstance(datum['ase_atoms'][0], MSONAtoms):
+            processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in datum['ase_atoms']]
+            datum.drop(columns=['ase_atoms'], inplace=True)
+            datum['ase_atoms'] = processed_atoms
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
