@@ -60,8 +60,6 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
     for datum in data:
         if datum is None:
             continue
-        if isinstance(datum, pd.DataFrame):
-            datum = datum.to_dict()
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
