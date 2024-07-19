@@ -3,6 +3,7 @@ from monty.json import MSONable
 import yaml
 import os
 from aceflow.core.active_learning import get_active_set
+from aceflow.utils.config import TrainConfig
 import pandas as pd
 
 @dataclass
@@ -13,6 +14,7 @@ class TrainedPotential(MSONable):
     interim_potential: dict = None
     active_set_file: dict = None
     status: str = None
+    trainer_config: TrainConfig = None
     metadata: dict = None
 
     def read_potential(self, potential_file: str) -> dict:
