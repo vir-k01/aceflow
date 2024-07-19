@@ -70,7 +70,7 @@ class ProductionACEMaker(Maker):
         
         if isinstance(precomputed_data, str):
             try:
-                precomputed_data = pd.read_pickle(precomputed_data, compression='gzip')
+                precomputed_data = pd.read_pickle(precomputed_data, compression='gzip').to_dict(orient='list')
             except:
                 raise ValueError("Precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame.")
     
