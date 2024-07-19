@@ -13,6 +13,9 @@ from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, trainer_config: TrainConfig = None, prev_run_dict: dict = None) -> str:
     if isinstance(computed_data_set, dict):
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
+    if computed_data_set.get('ase_atoms') is None:
+        print(computed_data_set.keys())
+        raise ValueError("Computed data set must contain ase_atoms column.")
     if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
         processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
         computed_data_set.drop(columns=['ase_atoms'], inplace=True)
