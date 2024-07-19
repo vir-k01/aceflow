@@ -8,6 +8,7 @@ from aceflow.core.model import TrainedPotential
 import os
 from typing import Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
+from tensorflow.config import list_physical_devices
 
 @job
 def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None) -> str:
@@ -21,13 +22,19 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
         processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
         computed_data_set.drop(columns=['ase_atoms'], inplace=True)
         computed_data_set['ase_atoms'] = processed_atoms
-
+    if list_physical_devices('GPU'):
+        trainer_config.gpu_index = 0
+    
     data_set = computed_data_set
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(trainer_config)
 
+    
+
     if trained_potential is not None:
-        potential = trained_potential['output_potential']
+        if isinstance(trained_potential, dict):
+            trained_potential = TrainedPotential.from_dict(trained_potential)
+        potential = trained_potential.output_potential
         TrainedPotential().dump_potential(potential, 'continue.yaml')
         #prev_run_status = prev_run_dict['status']
 
