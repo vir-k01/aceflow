@@ -10,6 +10,7 @@ class ACETrainerTaskDoc(BaseModel):
     trainer_config: Optional[Any] = Field(None, description='trainer_config')
     trained_potential: Optional[Any] = Field(None, description='trained_potential')
     log_file: Optional[List[str]] = Field(None, description='log_file')
+    train_dir : Optional[str] = Field(None, description='train_dir')
 
 
 class ACEDataTaskDoc(BaseModel):

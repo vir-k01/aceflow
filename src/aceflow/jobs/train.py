@@ -55,7 +55,8 @@ def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None)
         log = f.readlines()
     doc_data = {'log_file': log,
                 'trainer_config': trainer_config,
-                'trained_potential': trained_potential}
+                'trained_potential': trained_potential,
+                'train_dir': prev_run_dir}
 
     doc = ACETrainerTaskDoc(**doc_data)
     doc.task_label = trainer_config.name
