@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, List
 from pydantic import BaseModel, Field
 
 class ACETrainerTaskDoc(BaseModel):
@@ -9,7 +9,7 @@ class ACETrainerTaskDoc(BaseModel):
     computed_data_set: Optional[Any] = Field(None, description='computed_data_set')
     trainer_config: Optional[Any] = Field(None, description='trainer_config')
     trained_potential: Optional[Any] = Field(None, description='trained_potential')
-    log_file: Optional[str] = Field(None, description='log_file')
+    log_file: Optional[List[str]] = Field(None, description='log_file')
 
 
 class ACEDataTaskDoc(BaseModel):
