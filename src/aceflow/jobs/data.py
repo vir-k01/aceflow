@@ -66,7 +66,6 @@ def consolidate_data(data: Union[List[dict], List[pd.DataFrame]]):
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
         structures.extend(datum['ase_atoms'])
-    print(len(energies))
     data = {'energy': energies, 'forces': forces, 'ase_atoms': structures, 'energy_corrected': energies}
     return {'acedata': data}
 
