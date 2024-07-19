@@ -95,7 +95,7 @@ class ProductionACEMaker(Maker):
             self.trainer_config.loss_weight = loss
             if i:
                 trained_potential = train_checkers[-1].output
-            #self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
+            self.trainer_config.name = f"Step 0 Trainer, Loss Weight: {self.loss_weights[i]}"
             trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.acedata, trainer_config=self.trainer_config, trained_potential=trained_potential))
             train_checkers.append(check_training_output(trainers[-1].output))
 
@@ -108,7 +108,7 @@ class ProductionACEMaker(Maker):
                 for j, loss in enumerate(self.loss_weights):
                     self.trainer_config.loss_weight = loss
                     trained_potential = train_checkers[-1].output
-                    #self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
+                    self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
                     trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, trained_potential=trained_potential))
                     train_checkers.append(check_training_output(trainers[-1].output))
 

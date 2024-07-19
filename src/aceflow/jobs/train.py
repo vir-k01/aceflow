@@ -48,7 +48,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     return os.getcwd()
 
 @job
-def check_training_output(prev_run_dir: str) -> TrainedPotential:
-    trained_potential = TrainedPotential(train_dir = prev_run_dir)
+def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None) -> TrainedPotential:
+    trained_potential = TrainedPotential(train_dir = prev_run_dir, trainer_config = trainer_config)
     trained_potential.read_training_dir()
     return trained_potential
