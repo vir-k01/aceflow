@@ -48,7 +48,7 @@ class ProductionACEMaker(Maker):
     md_maker : Maker = None
     loss_weights = [0.99, 0.3]
 
-    def make(self, compositions: list = None, precomputed_data: pd.DataFrame = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
         trainers = []
         train_checkers = []
@@ -68,10 +68,14 @@ class ProductionACEMaker(Maker):
             job_list.append(data)
             data_output = data.output
         
+        if isinstance(precomputed_data, str):
+            try:
+                precomputed_data = pd.read_pickle(precomputed_data, compression='gzip')
+            except:
+                raise ValueError("Precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame.")
     
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
 
-        restart_dict = {}
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
@@ -85,7 +89,6 @@ class ProductionACEMaker(Maker):
             else:
                 raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")
         
-        #read_job = read_MD_outputs(md_outputs=data_output, precomputed_dataset=precomputed_data, step_skip=self.data_gen_config.step_skip)
 
         for i, loss in enumerate(self.loss_weights):
             self.trainer_config.loss_weight = loss
@@ -103,9 +106,9 @@ class ProductionACEMaker(Maker):
       
                 for j, loss in enumerate(self.loss_weights):
                     self.trainer_config.loss_weight = loss
-                    prev_run_dict = train_checkers[-1].output
+                    trained_potential = train_checkers[-1].output
                     #self.trainer_config.name = f"Active Step {i} Trainer, Loss Weight: {self.loss_weights[j]}"
-                    trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, prev_run_dict=prev_run_dict, trainer_config=self.trainer_config))
+                    trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, trained_potential=trained_potential))
                     train_checkers.append(check_training_output(trainers[-1].output))
 
             job_list.extend(active_set_flows)
