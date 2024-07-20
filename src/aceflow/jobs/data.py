@@ -37,7 +37,7 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     return doc
 
 
-@job(acedata='acedata')
+@job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def read_statics_outputs(statics: List = None):
     energies = []
     forces = []
@@ -60,7 +60,7 @@ def read_statics_outputs(statics: List = None):
     return doc
 
 
-@job(acedata='acedata')
+@job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
         
     energies = []
@@ -101,7 +101,7 @@ def deferred_static_from_list(maker, structures):
     else:
         return maker.make.original(maker, structures)
 
-@job(acedata='acedata')
+@job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def test_potential_in_restricted_space(trained_potential: TrainedPotential, compositions: list, active_learning_config: ActiveLearningConfig):
 
     prev_dir = trained_potential.train_dir
