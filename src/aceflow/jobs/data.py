@@ -75,7 +75,6 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
             continue
         if not isinstance(datum['ase_atoms'][0], MSONAtoms):
             processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=True) for atoms in datum['ase_atoms']]
-            datum.drop(columns=['ase_atoms'], inplace=True)
             datum['ase_atoms'] = processed_atoms
         energies.extend(datum['energy'])
         forces.extend(datum['forces'])
