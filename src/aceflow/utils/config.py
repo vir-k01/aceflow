@@ -11,7 +11,7 @@ class TrainConfig(MSONable):
     max_steps: int = 2000 # Maximum number of training steps. Default is 2000, increase if you feel the training needs more time to converge. Note: The training will stop if the loss function converges before this number of steps.
     batch_size: int = 200 # Batch size for training. Default is 200, decrease if you run out of memory.
     gpu_index: int = None # Index of the GPU to use. Default is None, which means the code will use the first available tf-compatible GPU. If you have multiple GPUs, you can specify the index of the GPU you want to use. If you don't have a GPU, only the CPU will be used.
-    ladder_step: list = [100, 0.2] # Number of steps to take in the ladder. This will increase the size of the basis step by a fraction of 0.2 the current size or 100 functions, whichever is higher.
+    ladder_step: list = field(default_factory=lambda: [100, 0.2]) # Number of steps to take in the ladder. This will increase the size of the basis step by a fraction of 0.2 the current size or 100 functions, whichever is higher.
     ladder_type: str = None #'body_order' or 'power_order. If None, no ladder is used. If 'body_order', the ladder will increase the number of body order functions. If 'power_order', the ladder will increase the power order of the basis functions.
     test_size: float = 0.1 # Fraction of the data to use for testing. Default is 0.1, increase if you want to use more data for testing.
     upfit: bool = False # If True, the code will use the previous run as an initial guess for the current run and extend the basis set as per the ladder fitting scheme. 
