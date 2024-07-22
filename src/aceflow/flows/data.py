@@ -47,9 +47,9 @@ class DataGenFlowMaker(Maker):
         
         if self.static_maker is None:
             self.static_maker = StaticMaker()
-            if self.data_gen_config.data_generator == 'MD':
-                self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)
-                self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
+            #if self.data_gen_config.data_generator == 'MD':
+            #    self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)
+            #    self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
         
         linear_strain = np.linspace(-0.25, 0.25, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
