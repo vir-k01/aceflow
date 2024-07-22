@@ -125,7 +125,7 @@ def test_potential_in_restricted_space(trained_potential: TrainedPotential, comp
     base_calculator.set_active_set(active_set)
     active_structures = []
     chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
-    test_points = generate_test_points(compositions, chemsys, iterations=3, max_points=active_learning_config.max_points)
+    test_points = generate_test_points(compositions, chemsys, iterations=1, max_points=active_learning_config.max_points)
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
         if gamma > active_learning_config.gamma_max and gamma < 10000000:

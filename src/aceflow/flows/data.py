@@ -1,5 +1,5 @@
 import numpy as np
-from jobflow import Flow, Maker
+from jobflow import Flow, Maker, OnMissing
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.structure_gen import get_random_packed
@@ -76,14 +76,14 @@ class DataGenFlowMaker(Maker):
                     jobs_list.append(md_job)
 
             MD_output_reader = read_MD_outputs(md_outputs, step_skip=self.data_gen_config.step_skip)
-            static_output_reader = read_statics_outputs(static_outputs)
+            MD_output_reader.config.on_missing_references = OnMissing.NONE
 
             jobs_list.append(MD_output_reader)
-            jobs_list.append(static_output_reader)
 
             if self.data_gen_config.data_generator in ['Static', 'Static_Defect']:
                 static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output.acedata, perturbed_structures])
                 output_reader = read_statics_outputs(static_jobs.output)
+                output_reader.config.on_missing_references = OnMissing.NONE
                 jobs_list.append(static_jobs)
                 jobs_list.append(output_reader)
 
@@ -106,4 +106,5 @@ class ActiveStructuresFlowMaker(Maker):
             #self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
         static_jobs = deferred_static_from_list(self.static_maker, structures)
         output_reader = read_statics_outputs(static_jobs.output)
+        output_reader.config.on_missing_references = OnMissing.NONE
         return Flow([active_structures, static_jobs, output_reader], output=output_reader.output.acedata)
