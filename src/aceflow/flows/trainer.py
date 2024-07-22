@@ -13,6 +13,56 @@ from typing import Union
 
 
 @dataclass
+class ACEMaker(Maker):
+    name : str = 'ACE Maker'
+    trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
+    loss_weights : list = [0.99, 0.3]
+
+    def make(self, data: pd.DataFrame, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+        trainers = []
+        train_checkers = []
+        job_list = []
+        trained_potential = None
+
+        if self.trainer_config.chemsys is None:
+            raise ValueError("Chemical system must be provided in the trainer config.")
+
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("Data must be a pandas dataframe with columns for energy, ase_atoms, forces and energy_corrected.")
+        
+        if not isinstance(data, str):
+            try:
+                data_path = os.getcwd() + '/data.pckl.gzip'
+                pd.to_pickle(data, data_path, compression='gzip', protocol=4)
+            except:
+                raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
+
+        if pretrained_potential:
+            if isinstance(pretrained_potential, str):
+                trained_potential = TrainedPotential()
+                trained_potential.read_potential(pretrained_potential)
+                if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
+                    trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
+
+            if isinstance(pretrained_potential, TrainedPotential):
+                trained_potential = pretrained_potential
+            else:
+                raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")
+        
+        for i, loss in enumerate(self.loss_weights):
+            self.trainer_config.loss_weight = loss
+            if i:
+                trained_potential = train_checkers[-1].output.trained_potential
+            self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}"
+            trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
+            train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
+
+        job_list.extend(trainers)
+        job_list.extend(train_checkers)
+        return Flow(job_list, output=train_checkers[-1].output, name=self.name)
+
+
+@dataclass
 class ProductionACEMaker(Maker):
     '''
     Basic ACE trainer: Wrapper for pacemaker, also calls a series of md jobs on structures (both amorphous using packmol and crystalline, queried from MP). 
@@ -40,13 +90,13 @@ class ProductionACEMaker(Maker):
     gamma_max : int = 1 : Cutoff extrapolation grade beyond which a structure is considered to be in the active set.
 
     '''
-    name : str = 'ACE Maker'
+    name : str = 'Production ACE Maker'
     trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
     md_maker : MDMaker = None
-    loss_weights = [0.99, 0.3]
+    loss_weights : list = [0.99, 0.3]
 
     def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
