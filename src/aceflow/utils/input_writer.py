@@ -8,11 +8,29 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
     max_steps = trainer_config.max_steps
     batch_size = trainer_config.batch_size
     gpu_index = trainer_config.gpu_index
-    chemsys = ['Ba', 'O', 'Ti']
+    ladder_step = trainer_config.ladder_step
+    ladder_type = trainer_config.ladder_type
+    test_size = trainer_config.test_size
+    chemsys = trainer_config.chemsys
+    
+
+    if isinstance(ladder_step, int):
+        ladder_step = [ladder_step]
+      
+    if isinstance(chemsys, dict):
+        reference_energy_dict = chemsys.copy()
+        chemsys = list(chemsys.keys())
 
     gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
+
+    ladder_control = '#'
+    if ladder_type:
+        ladder_control = ''
+        ladder_step = [str(step) for step in ladder_step]
+
     if reference_energy_dict is None:
         reference_energy_dict = {'Ba': -0.13385613, 'Ti': -1.21095265, 'O': -0.05486302, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611}
+    
     content = f"""
   cutoff: {cutoff} # cutoff for neighbour list construction
   seed: 42  # random seed
@@ -59,7 +77,7 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
   #################################################################
   data:
     filename: data.pckl.gzip       # force to read reference pickled dataframe from given file
-    test_size: 0.1
+    test_size: {test_size}
     #  aug_factor: 1e-4 # common prefactor for weights of augmented structures
     reference_energy: {reference_energy_dict}
 
@@ -81,8 +99,8 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
     ## Automatically find the smallest interatomic distance in dataset  and set inner cutoff for ZBL to it
     repulsion: auto
 
-    #ladder_step: [10, 0.2]
-    #ladder_type: power_order
+    {ladder_control}ladder_step: {ladder_step}
+    {ladder_control}ladder_type: {ladder_type}
 
     # Early stopping
     min_relative_train_loss_per_iter: 5e-5

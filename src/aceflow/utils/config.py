@@ -10,6 +10,10 @@ class TrainConfig(MSONable):
     max_steps: int = 2000
     batch_size: int = 200
     gpu_index: int = None
+    ladder_step: int = 100
+    ladder_type: str = None #'body_order' or 'power_order
+    chemsys: dict | list = None
+    test_size: float = 0.1
     name : str = None
 
 

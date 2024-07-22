@@ -1,7 +1,7 @@
 from jobflow import job
 import pandas as pd
 import subprocess
-from aceflow.utils.util import write_input
+from aceflow.utils.input_writer import write_input
 from aceflow.schemas.core import ACETrainerTaskDoc
 from aceflow.utils.config import TrainConfig
 from aceflow.core.model import TrainedPotential
