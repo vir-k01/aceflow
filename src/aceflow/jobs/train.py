@@ -25,28 +25,20 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame] = None, traine
     if list_physical_devices('GPU'):
         trainer_config.gpu_index = 0
     
+    if trainer_config.ladder_type:
+        trainer_config.upfit = True
+    
     data_set = computed_data_set
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     write_input(trainer_config)
-
-    
+    init_control = '-ip' if trainer_config.upfit else '-p'
 
     if trained_potential is not None:
         if isinstance(trained_potential, dict):
             trained_potential = TrainedPotential.from_dict(trained_potential)
         potential = trained_potential.output_potential
         TrainedPotential().dump_potential(potential, 'continue.yaml')
-        #prev_run_status = prev_run_dict['status']
-
-        #with open("continue.yaml", 'w') as f:
-        #    yaml.dump(potential, f, default_flow_style=False, sort_keys=False, Dumper=yaml.Dumper, default_style=None)
-
-        #if prev_run_status == 'complete':
-        subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)
-        #else:
-        #    naive_train_ACE(computed_data_set, num_basis, cutoff, loss_weight, max_steps, batch_size, gpu_index, prev_run_dict)
-        #    write_input(num_basis, cutoff, loss_weight, batch_size, gpu_index, max_steps=100)
-        #    subprocess.run("pacemaker -p continue.yaml input.yaml", shell=True)e)
+        subprocess.run(f"pacemaker {init_control} continue.yaml input.yaml", shell=True)
     else:
         subprocess.run("pacemaker input.yaml", shell=True)
     
