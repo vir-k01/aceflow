@@ -89,21 +89,28 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
 @job
 def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MSONAtoms]]):
 
-    if isinstance(structures, dict):
+    all_structures = []
+    for structure in structures:
+        if isinstance(structure, dict):
+            all_structures.extend([AseAtomsAdaptor().get_structure(structure_) for structure_ in structure['ase_atoms']]) # if structure is a dict of structures
+        if isinstance(structure, MSONAtoms):
+            all_structures.extend([AseAtomsAdaptor().get_structure(structure) for structure in structures])
+        if isinstance(structure, Structure):
+            all_structures.extend([structure])
+
+    '''if isinstance(structures, dict):
         structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures['ase_atoms']]
 
     if isinstance(structures, list):
         if isinstance(structures[0], MSONAtoms):
             structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures]
         if isinstance(structures[0], dict):
-            structures = [AseAtomsAdaptor().get_structure(structure) for structure_dict in structures for structure in structure_dict['ase_atoms']]
+            structures = [AseAtomsAdaptor().get_structure(structure) for structure_dict in structures for structure in structure_dict['ase_atoms']]'''
 
-        static_jobs = [maker.make(structure) for structure in structures]
-        static_outputs = [static_job.output for static_job in static_jobs]
-        flow = Flow(static_jobs, output=static_outputs)
-        return Response(replace=flow)
-    else:
-        return maker.make.original(maker, structures)
+    static_jobs = [maker.make(structure) for structure in all_structures]
+    static_outputs = [static_job.output for static_job in static_jobs]
+    flow = Flow(static_jobs, output=static_outputs)
+    return Response(replace=flow)
 
 @job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def test_potential_in_restricted_space(trained_potential: TrainedPotential, compositions: list, active_learning_config: ActiveLearningConfig):
