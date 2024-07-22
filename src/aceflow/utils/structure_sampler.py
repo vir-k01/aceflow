@@ -71,7 +71,7 @@ def generate_test_points(compositions : list, chemsys : list, iterations : int =
     num_sampled = 0
     base_branches = get_boundary_branches(compositions=compositions, chemsys=chemsys)
     num_edges = len(list(base_branches.keys()))
-    dist = int((max_points // (num_edges)**2)**(1/iterations))
+    dist = 5 #int((max_points // (num_edges)**2)**(1/iterations))
     for i in range(iterations):
         points = list(get_composition_along_branches(alpha=np.linspace(0, 1, dist), branches=base_branches, chemsys=chemsys).values())
         test_points.append([composition for sublist in points for composition in sublist])

@@ -106,6 +106,6 @@ def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
     T=5000
     dyn = Langevin(atoms, 1 * units.fs, T * units.kB, 0.002)
     dyn.run(100)
-    #if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > 1000:
-    #    return [atoms, 10000000]
+    if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > 1000:
+        return [atoms, 1000]
     return [atoms, np.max(calculator.results['gamma'])]

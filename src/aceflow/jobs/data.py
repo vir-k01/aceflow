@@ -126,11 +126,12 @@ def test_potential_in_restricted_space(trained_potential: TrainedPotential, comp
     active_structures = []
     chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
     test_points = generate_test_points(compositions, chemsys, iterations=1, max_points=active_learning_config.max_points)
+    print(len(test_points))
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
-        if gamma > active_learning_config.gamma_max and gamma < 10000000:
+        if gamma > active_learning_config.gamma_max and gamma < 1000:
             active_structures.append(atoms)
-
+    print(len(active_structures))
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
 
