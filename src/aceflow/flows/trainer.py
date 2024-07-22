@@ -16,7 +16,7 @@ from typing import Union
 class ACEMaker(Maker):
     name : str = 'ACE Maker'
     trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
-    loss_weights : list = [0.99, 0.3]
+    loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
 
     def make(self, data: pd.DataFrame, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
         trainers = []
@@ -96,7 +96,7 @@ class ProductionACEMaker(Maker):
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
     md_maker : MDMaker = None
-    loss_weights : list = [0.99, 0.3]
+    loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
 
     def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
