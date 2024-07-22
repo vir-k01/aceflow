@@ -63,7 +63,7 @@ class DataGenFlowMaker(Maker):
                 deformed_structures = _apply_strain_to_structure(structure, deformation_matrices)
                 perturbed_structures = [structure.copy() for structure in deformed_structures]
                 for i, perturbation_magnitude in enumerate(perturbation_magnitudes):
-                    for j in range(self.num_points):
+                    for j in range(self.data_gen_config.num_points):
                         perturbed_structures[i].perturb(perturbation_magnitude)
 
                 for i, deformed_structure in enumerate(deformed_structures):
