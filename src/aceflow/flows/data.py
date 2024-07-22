@@ -29,7 +29,7 @@ class DataGenFlowMaker(Maker):
             with MPRester() as mpr:
                 entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, self.data_gen_config.max_energy_above_hull)})
 
-            working_structures = [entry.structure for entry in entries]
+            working_structures = [entry.structure.make_supercell(2, 2, 2) if len(entry.structure) < 50 else entry.structure for entry in entries]
             for composition in compositions:
                 working_structures.append(get_random_packed(composition, vol_exp=1.2))
         if self.md_maker is None:
@@ -45,13 +45,27 @@ class DataGenFlowMaker(Maker):
             self.maker = update_user_incar_settings(self.maker, self.data_gen_config.incar_updates)
             self.maker = update_user_kpoints_settings(self.maker, self.data_gen_config.kpoints)
         
+        if self.static_maker is None:
+            self.static_maker = StaticMaker()
+            if self.data_gen_config.data_generator == 'MD':
+                self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)
+                self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
+        
         linear_strain = np.linspace(-0.25, 0.25, self.data_gen_config.num_points)
         deformation_matrices = [np.eye(3) * (1.0 + eps) for eps in linear_strain]
+        perturbation_magnitudes = np.linspace(0.01, 0.05, self.data_gen_config.num_points)
         jobs_list = []
         md_outputs = []
+        static_outputs = []
+
         if working_structures:
             for structure in working_structures:
                 deformed_structures = _apply_strain_to_structure(structure, deformation_matrices)
+                perturbed_structures = [structure.copy() for structure in deformed_structures]
+                for i, perturbation_magnitude in enumerate(perturbation_magnitudes):
+                    for j in range(self.numb_points):
+                        perturbed_structures[i].perturb(perturbation_magnitude)
+
                 for i, deformed_structure in enumerate(deformed_structures):
                     md_job = self.md_maker.make(deformed_structure.final_structure)
                     md_job.update_metadata({"Type": "AIMD"})
@@ -62,10 +76,13 @@ class DataGenFlowMaker(Maker):
                     jobs_list.append(md_job)
 
             MD_output_reader = read_MD_outputs(md_outputs, step_skip=self.data_gen_config.step_skip)
-            jobs_list.append(MD_output_reader)
+            static_output_reader = read_statics_outputs(static_outputs)
 
-            if self.data_gen_config.data_generator == 'Static':
-                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output.acedata])
+            jobs_list.append(MD_output_reader)
+            jobs_list.append(static_output_reader)
+
+            if self.data_gen_config.data_generator in ['Static', 'Static_Defect']:
+                static_jobs = deferred_static_from_list(maker=self.static_maker, structures=[MD_output_reader.output.acedata, perturbed_structures])
                 output_reader = read_statics_outputs(static_jobs.output)
                 jobs_list.append(static_jobs)
                 jobs_list.append(output_reader)

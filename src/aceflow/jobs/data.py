@@ -8,6 +8,7 @@ from aceflow.utils.config import ActiveLearningConfig
 from aceflow.utils.cleaner import dataframe_to_ace_dict
 from aceflow.core.model import TrainedPotential
 from aceflow.schemas.core import ACEDataTaskDoc
+from pymatgen.core.structure import Structure
 import pandas as pd
 import os
 
@@ -86,7 +87,11 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
     return doc
 
 @job
-def deferred_static_from_list(maker, structures):
+def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MSONAtoms]]):
+
+    if isinstance(structures, dict):
+        structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures['ase_atoms']]
+
     if isinstance(structures, list):
         if isinstance(structures[0], MSONAtoms):
             structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures]
