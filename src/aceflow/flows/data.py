@@ -33,17 +33,17 @@ class DataGenFlowMaker(Maker):
             for composition in compositions:
                 working_structures.append(get_random_packed(composition, vol_exp=1.2))
         if self.md_maker is None:
-            '''self.md_maker = PyACEMDMaker(**{"time_step": 2,
+            self.md_maker = PyACEMDMaker(**{"time_step": 2,
                             "n_steps": self.data_gen_config.md_steps,
                             "temperature": self.data_gen_config.temperature,
                             "calculator_kwargs": {'basis_set':'/pscratch/sd/v/virkaran/ace_test/train/29-6/2/output_potential.yaml'},
                             "traj_file": "test-ACE.traj",
                             "traj_file_fmt": "pmg",
                             "traj_interval": 1
-        })'''
-            self.md_maker = MDMaker(temperature=self.data_gen_config.temperature, end_temp=self.data_gen_config.temperature, steps=self.data_gen_config.md_steps)
-            self.maker = update_user_incar_settings(self.maker, self.data_gen_config.incar_updates)
-            self.maker = update_user_kpoints_settings(self.maker, self.data_gen_config.kpoints)
+        })
+            #self.md_maker = MDMaker(temperature=self.data_gen_config.temperature, end_temp=self.data_gen_config.temperature, steps=self.data_gen_config.md_steps)
+            #self.maker = update_user_incar_settings(self.maker, self.data_gen_config.incar_updates)
+            #self.maker = update_user_kpoints_settings(self.maker, self.data_gen_config.kpoints)
         
         if self.static_maker is None:
             self.static_maker = StaticMaker()

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from monty.json import MSONable
+from typing import Union
 
 
 @dataclass
@@ -14,7 +15,7 @@ class TrainConfig(MSONable):
     ladder_type: str = None #'body_order' or 'power_order. If None, no ladder is used. If 'body_order', the ladder will increase the number of body order functions. If 'power_order', the ladder will increase the power order of the basis functions.
     test_size: float = 0.1 # Fraction of the data to use for testing. Default is 0.1, increase if you want to use more data for testing.
     upfit: bool = False # If True, the code will use the previous run as an initial guess for the current run and extend the basis set as per the ladder fitting scheme. 
-    chemsys: dict | list = None # A dict mapping the elements to their reference energies. If only a list of elements is provided, the reference energies are taken from precomputed GGA PBEsol energies. 
+    chemsys: Union[dict, list] = None # A dict mapping the elements to their reference energies. If only a list of elements is provided, the reference energies are taken from precomputed GGA PBEsol energies. 
     name : str = None 
 
 
