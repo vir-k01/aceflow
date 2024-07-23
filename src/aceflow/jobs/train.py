@@ -1,7 +1,7 @@
 from jobflow import job, Flow, Response
 import pandas as pd
 import subprocess
-from aceflow.utils.input_writer import write_input
+from aceflow.utils.input_writer import write_input, flexible_input_writer
 from aceflow.schemas.core import ACETrainerTaskDoc
 from aceflow.utils.config import TrainConfig
 from aceflow.core.model import TrainedPotential
@@ -37,7 +37,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
     
     data_set = computed_data_set
     data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
-    write_input(trainer_config)
+    flexible_input_writer(trainer_config)
     init_control = '-ip' if trainer_config.upfit else '-p'
 
     if trained_potential is not None:

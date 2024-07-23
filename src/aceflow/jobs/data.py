@@ -117,6 +117,8 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
 
     if isinstance(trained_potential, TrainedPotential):
         prev_dir = trained_potential.train_dir
+    if isinstance(trained_potential, dict):
+        prev_dir = trained_potential['train_dir']
     else:
         prev_dir = trained_potential
     if os.path.isfile(prev_dir + '/output_potential.yaml'):
