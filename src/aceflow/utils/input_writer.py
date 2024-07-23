@@ -134,11 +134,11 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     ladder_type = trainer_config.ladder_type
     test_size = trainer_config.test_size
     chemsys = trainer_config.chemsys
-    bbasis_train_order_range = trainer_config.bbasis_train_order_range
+    bbasis_train_order_ranges = trainer_config.bbasis_train_orders
     heirachical_fit = trainer_config.heirarchical_fit
 
 
-    embedding, bonds, unary = None, None, None
+    embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = None, None, None
     
     if heirachical_fit:
         initial_potentials_control = '#'
@@ -147,7 +147,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
         if isinstance(initial_potentials, dict):
             initial_potentials = list(initial_potentials.values())
 
-        bbasis_train_order_range = heirachical_fit.bbasis_train_order_range
+        bbasis_train_orders = heirachical_fit.bbasis_train_orders
 
     else:
         initial_potentials_control = ''
@@ -163,17 +163,23 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     basis_order_mapping = {}
     for name, bbasis in trainer_config.bbasis.items():
         if isinstance(bbasis, UnaryBBasisOrder):
+          if bbasis.order < len(chemsys):
             unary = bbasis
         if isinstance(bbasis, BinaryBBasisOrder):
-            binary = bbasis
+            if bbasis.order < len(chemsys):
+              binary = bbasis
         if isinstance(bbasis, TernaryBBasisOrder):
-            ternary = bbasis
+            if bbasis.order < len(chemsys):
+              ternary = bbasis
         if isinstance(bbasis, QuaternaryBBasisOrder):
-            quaternary = bbasis
+            if bbasis.order < len(chemsys):
+              quaternary = bbasis
         if isinstance(bbasis, QuinaryBBasisOrder):
-            quinary = bbasis
+            if bbasis.order < len(chemsys):
+              quinary = bbasis
         if isinstance(bbasis, AllBBasisOrder):
-            all_basis = bbasis
+            if bbasis.order < len(chemsys):
+              all_basis = bbasis
         if isinstance(bbasis, BBasisBonds):
             bonds = bbasis
         if isinstance(bbasis, BBasisEmbedding):
@@ -182,27 +188,36 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
         if isinstance(bbasis, FlowBBasisOrder):
             basis_order_mapping[bbasis.order] = bbasis
 
+    func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
+    trainable_parameters_control = '' if bbasis_train_orders else '#'
+
     if embedding is None:
         embedding = BBasisEmbedding()
     if bonds is None:
         bonds = BBasisBonds()
     if unary is None:
         unary = UnaryBBasisOrder()
-            
-    func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
-    for order in func_order_control.keys():
-        if order < len(chemsys):
-            func_order_control[order] = ''
-
-    if bbasis_train_order_range == [-1, -1]:
-        trainable_parameters_control = '#'
-    else:
-        trainable_parameters_control = ''
+        func_order_control[0] = ''
+    if binary is None:
+        func_order_control[1] = '#'
+        binary = BinaryBBasisOrder()
+    if ternary is None:
+        func_order_control[2] = '#'
+        ternary = TernaryBBasisOrder()
+    if quaternary is None:
+        func_order_control[3] = '#'
+        quaternary = QuaternaryBBasisOrder()
+    if quinary is None:
+        func_order_control[4] = '#'
+        quinary = QuinaryBBasisOrder()
+    if all_basis is None:
+        func_order_control[-1] = '#'
+        all_basis = AllBBasisOrder()
     
     trainable_parameters = []
     for order in func_order_control.keys():
         if order < len(chemsys):
-          if order >= min(bbasis_train_order_range) and order <= max(bbasis_train_order_range):
+          for order in bbasis_train_orders:
             trainable_parameters.append(basis_order_mapping[order].name)
 
     gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
