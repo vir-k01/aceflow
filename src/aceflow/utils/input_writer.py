@@ -138,7 +138,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     heirachical_fit = trainer_config.heirarchical_fit
 
 
-    embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = None, None, None
+    embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = [None]*8
     
     if heirachical_fit:
         initial_potentials_control = '#'
