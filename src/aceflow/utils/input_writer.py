@@ -136,6 +136,9 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     chemsys = trainer_config.chemsys
     bbasis_train_order_range = trainer_config.bbasis_train_order_range
     heirachical_fit = trainer_config.heirarchical_fit
+
+
+    embedding, bonds, unary = None, None, None
     
     if heirachical_fit:
         initial_potentials_control = '#'
@@ -178,6 +181,13 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
           
         if isinstance(bbasis, FlowBBasisOrder):
             basis_order_mapping[bbasis.order] = bbasis
+
+    if embedding is None:
+        embedding = BBasisEmbedding()
+    if bonds is None:
+        bonds = BBasisBonds()
+    if unary is None:
+        unary = UnaryBBasisOrder()
             
     func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
     for order in func_order_control.keys():
