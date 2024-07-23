@@ -211,7 +211,7 @@ class HeirarchicalACEMaker(ACEMaker):
             if hiter > len(self.trainer_config.chemsys):
                 break
             potential_shape_dict.update(bbasis_order_map[hiter])
-            self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, hiter+1)]
+            self.trainer_config.bbasis_train_orders = [i for i in range(self.hconfig.start_order, hiter+1)]
             self.trainer_config.bbasis = potential_shape_dict
             if hiter > self.hconfig.start_order:
                 self.trainer_config.max_steps = self.trainer_config.max_steps // 2
