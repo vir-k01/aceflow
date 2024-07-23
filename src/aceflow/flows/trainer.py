@@ -151,7 +151,7 @@ class ProductionACEMaker(Maker):
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
-                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, trained_potential=train_checkers[-1].output)
+                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, active_learning_config=self.active_learning_config).make(compositions, trained_potential=train_checkers[-1].output.trained_potential)
                 active_set_flows.append(active_set_flow)
                 consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output.acedata, active_set_flow.output]))
       
