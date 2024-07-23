@@ -138,7 +138,17 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     heirachical_fit = trainer_config.heirarchical_fit
     
     if heirachical_fit:
-        pass #TODO: Implement heirachical fit
+        initial_potentials_control = '#'
+        initial_potentials = heirachical_fit.initial_potentials
+
+        if isinstance(initial_potentials, dict):
+            initial_potentials = list(initial_potentials.values())
+
+        bbasis_train_order_range = heirachical_fit.bbasis_train_order_range
+
+    else:
+        initial_potentials_control = ''
+        initial_potentials = 'None'
 
     if isinstance(ladder_step, int):
         ladder_step = [ladder_step]
@@ -239,6 +249,8 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
       {func_order_control[3]}QUATERNARY: {{ nradmax_by_orders: {quaternary.nradmax_by_orders}, lmax_by_orders: {quaternary.lmax_by_orders} }}
       {func_order_control[4]}QUINARY: {{ nradmax_by_orders: {quinary.nradmax_by_orders}, lmax_by_orders: {quinary.lmax_by_orders} }}
       {func_order_control[-1]}ALL:     {{ nradmax_by_orders: {all_basis.nradmax_by_orders}, lmax_by_orders: {all_basis.lmax_by_orders} }}
+
+    {initial_potentials_control}initial_potentials: {initial_potentials}
     
   #################################################################
   ## Dataset specification section
