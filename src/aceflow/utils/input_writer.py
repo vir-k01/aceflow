@@ -141,7 +141,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = [None]*8
     
     if heirachical_fit:
-        initial_potentials_control = '#'
+        initial_potentials_control = ''
         initial_potentials = heirachical_fit.initial_potentials
 
         if isinstance(initial_potentials, dict):
@@ -150,7 +150,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
         bbasis_train_orders = heirachical_fit.bbasis_train_orders
 
     else:
-        initial_potentials_control = ''
+        initial_potentials_control = '#'
         initial_potentials = 'None'
 
     if isinstance(ladder_step, int):
@@ -162,33 +162,31 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
 
     basis_order_mapping = {}
     for name, bbasis in trainer_config.bbasis.items():
-        if isinstance(bbasis, UnaryBBasisOrder):
-          if bbasis.order < len(chemsys):
-            unary = bbasis
-        if isinstance(bbasis, BinaryBBasisOrder):
-            if bbasis.order < len(chemsys):
-              binary = bbasis
-        if isinstance(bbasis, TernaryBBasisOrder):
-            if bbasis.order < len(chemsys):
-              ternary = bbasis
-        if isinstance(bbasis, QuaternaryBBasisOrder):
-            if bbasis.order < len(chemsys):
-              quaternary = bbasis
-        if isinstance(bbasis, QuinaryBBasisOrder):
-            if bbasis.order < len(chemsys):
-              quinary = bbasis
-        if isinstance(bbasis, AllBBasisOrder):
-            if bbasis.order < len(chemsys):
-              all_basis = bbasis
-        if isinstance(bbasis, BBasisBonds):
-            bonds = bbasis
-        if isinstance(bbasis, BBasisEmbedding):
-            embedding = bbasis
-          
-        if isinstance(bbasis, FlowBBasisOrder):
-            basis_order_mapping[bbasis.order] = bbasis
+      if isinstance(bbasis, UnaryBBasisOrder):
+        unary = bbasis
+      if isinstance(bbasis, BinaryBBasisOrder):
+        binary = bbasis
+      if isinstance(bbasis, TernaryBBasisOrder):
+        ternary = bbasis
+      if isinstance(bbasis, QuaternaryBBasisOrder):
+        quaternary = bbasis
+      if isinstance(bbasis, QuinaryBBasisOrder):
+        quinary = bbasis
+      if isinstance(bbasis, AllBBasisOrder):
+        all_basis = bbasis
+      if isinstance(bbasis, BBasisBonds):
+        bonds = bbasis
+      if isinstance(bbasis, BBasisEmbedding):
+        embedding = bbasis
+      if isinstance(bbasis, FlowBBasisOrder):
+          basis_order_mapping[bbasis.order] = bbasis
 
     func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
+    for order in basis_order_mapping.keys():
+      if order < len(chemsys):
+        func_order_control[order] = ''
+
+    
     trainable_parameters_control = '' if bbasis_train_orders else '#'
     trainable_parameters = []
     if bbasis_train_orders:
