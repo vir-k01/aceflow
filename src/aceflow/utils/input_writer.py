@@ -1,5 +1,6 @@
 from aceflow.utils.config import TrainConfig
 from aceflow.reference_objects.BBasis_classes import *
+from aceflow.core.model import TrainedPotential
 
 def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None):
     num_basis = trainer_config.num_basis
@@ -139,20 +140,24 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
 
 
     embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = [None]*8
+    initial_potentials_paths = []
+
+    initial_potentials_control = '#'
+    initial_potentials = 'None'
     
     if heirachical_fit:
-        initial_potentials_control = ''
-        initial_potentials = heirachical_fit.initial_potentials
+        if heirachical_fit.initial_potentials:
+          initial_potentials_control = ''
+          initial_potentials = heirachical_fit.initial_potentials
 
-        if isinstance(initial_potentials, dict):
-            initial_potentials = list(initial_potentials.values())
-
-        bbasis_train_orders = heirachical_fit.bbasis_train_orders
-
-    else:
-        initial_potentials_control = '#'
-        initial_potentials = 'None'
-
+          if isinstance(initial_potentials, dict):
+              for k,p in initial_potentials.items():
+                  if isinstance(p, TrainedPotential):
+                      TrainedPotential().dump_potential(p.interim_potential, 'initial_potential_'+k+'.yaml')
+                  if isinstance(p, dict):
+                      TrainedPotential().dump_potential(p['interim_potential'], 'initial_potential_'+k+'.yaml')
+                  initial_potentials_paths.append('initial_potential_'+k+'.yaml')
+                  
     if isinstance(ladder_step, int):
         ladder_step = [ladder_step]
       
@@ -272,7 +277,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
       {func_order_control[4]}QUINARY: {{ nradmax_by_orders: {quinary.nradmax_by_orders}, lmax_by_orders: {quinary.lmax_by_orders} }}
       {func_order_control[-1]}ALL:     {{ nradmax_by_orders: {all_basis.nradmax_by_orders}, lmax_by_orders: {all_basis.lmax_by_orders} }}
 
-    {initial_potentials_control}initial_potentials: {initial_potentials}
+    {initial_potentials_control}initial_potentials: {initial_potentials_paths}
     
   #################################################################
   ## Dataset specification section

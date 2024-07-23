@@ -4,6 +4,14 @@ from typing import Union, Dict
 from aceflow.reference_objects.BBasis_classes import *
 
 
+
+@dataclass
+class HeirarchicalFitConfig(MSONable):
+    initial_potentials: dict = None
+    start_order: list = None
+    end_order: list = None
+
+
 @dataclass
 class TrainConfig(MSONable):
     num_basis : int = 500 # Number of basis functions to use per element. Default is 500, increase if you feel the model is underfitting. P.S.: If you end up using > 1000, you're probably doing something wrong.
@@ -20,7 +28,7 @@ class TrainConfig(MSONable):
     chemsys: Union[dict, list] = None # A dict mapping the elements to their reference energies. If only a list of elements is provided, the reference energies are taken from precomputed GGA PBEsol energies. 
     bbasis: Dict[str, FlowBBasisOrder] = field(default_factory=lambda: {'UNARY': UnaryBBasisOrder(), 'BINARY': BinaryBBasisOrder(), 'TERNARY': TernaryBBasisOrder(), 'QUATERNARY': QuaternaryBBasisOrder(), 'QINARY': QuinaryBBasisOrder(), 'ALL': AllBBasisOrder(), 'bonds': BBasisBonds(), 'embedding': BBasisEmbedding()}) # List of BBasisOrder objects to use for the training. 
     bbasis_train_orders: list = None # Order of the BBasis to train. Default is -1, which means all the bbasis functions are trained. If you want to train only a specific order, you can specify it here. Example: [0, 2] will train only the unary binary, ternary basis functions. [0, 0] will train only the unary basis functions. 
-    heirarchical_fit: dict = None
+    heirarchical_fit: HeirarchicalFitConfig = None # Heirarchical fitting configuration. If None, no heirarchical fitting is used.
     name : str = None 
 
 
