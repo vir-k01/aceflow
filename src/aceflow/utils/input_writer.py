@@ -134,7 +134,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     ladder_type = trainer_config.ladder_type
     test_size = trainer_config.test_size
     chemsys = trainer_config.chemsys
-    bbasis_train_order_ranges = trainer_config.bbasis_train_orders
+    bbasis_train_orders = trainer_config.bbasis_train_orders
     heirachical_fit = trainer_config.heirarchical_fit
 
 
