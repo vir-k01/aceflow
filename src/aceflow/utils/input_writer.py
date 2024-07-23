@@ -147,7 +147,8 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
         reference_energy_dict = chemsys.copy()
         chemsys = list(chemsys.keys())
 
-    for bbasis in trainer_config.bbasis[:len(chemsys)]:
+    basis_order_mapping = {}
+    for bbasis in trainer_config.bbasis:
         if isinstance(bbasis, UnaryBBasisOrder):
             unary = bbasis
         if isinstance(bbasis, BinaryBBasisOrder):
@@ -164,12 +165,8 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
             bonds = bbasis
         if isinstance(bbasis, BBasisEmbedding):
             embedding = bbasis
-
-    basis_order_mapping = {}
-    for bbasis in trainer_config.bbasis:
-        if isinstance(bbasis, FlowBBasisOrder):
-            basis_order_mapping[bbasis.order] = bbasis
-
+        basis_order_mapping[bbasis.order] = bbasis
+            
     func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
     for order in func_order_control.keys():
         if order < len(chemsys):
@@ -183,7 +180,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     trainable_parameters = []
     for order in func_order_control.keys():
         if order < len(chemsys):
-          if order > min(bbasis_train_order_range) and order < max(bbasis_train_order_range):
+          if order >= min(bbasis_train_order_range) and order <= max(bbasis_train_order_range):
             trainable_parameters.append(basis_order_mapping[order].name)
 
     gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
