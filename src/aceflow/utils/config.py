@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from monty.json import MSONable
-from typing import Union
+from typing import Union, Dict
+from aceflow.reference_objects.BBasis_classes import *
 
 
 @dataclass
@@ -11,11 +12,15 @@ class TrainConfig(MSONable):
     max_steps: int = 2000 # Maximum number of training steps. Default is 2000, increase if you feel the training needs more time to converge. Note: The training will stop if the loss function converges before this number of steps.
     batch_size: int = 200 # Batch size for training. Default is 200, decrease if you run out of memory.
     gpu_index: int = None # Index of the GPU to use. Default is None, which means the code will use the first available tf-compatible GPU. If you have multiple GPUs, you can specify the index of the GPU you want to use. If you don't have a GPU, only the CPU will be used.
+    restart_failed_runs: bool = False # If True, the code will restart the failed runs from the last checkpoint. Default is False, set to True if you want to restart the failed runs.
     ladder_step: list = field(default_factory=lambda: [100, 0.2]) # Number of steps to take in the ladder. This will increase the size of the basis step by a fraction of 0.2 the current size or 100 functions, whichever is higher.
     ladder_type: str = None #'body_order' or 'power_order. If None, no ladder is used. If 'body_order', the ladder will increase the number of body order functions. If 'power_order', the ladder will increase the power order of the basis functions.
     test_size: float = 0.1 # Fraction of the data to use for testing. Default is 0.1, increase if you want to use more data for testing.
     upfit: bool = False # If True, the code will use the previous run as an initial guess for the current run and extend the basis set as per the ladder fitting scheme. 
     chemsys: Union[dict, list] = None # A dict mapping the elements to their reference energies. If only a list of elements is provided, the reference energies are taken from precomputed GGA PBEsol energies. 
+    bbasis: Dict[str, FlowBBasisOrder] = field(default_factory=lambda: {'UNARY': UnaryBBasisOrder(), 'BINARY': BinaryBBasisOrder(), 'TERNARY': TernaryBBasisOrder(), 'QUATERNARY': QuaternaryBBasisOrder(), 'QINARY': QuinaryBBasisOrder(), 'ALL': AllBBasisOrder(), 'bonds': BBasisBonds, 'embedding': BBasisEmbedding}) # List of BBasisOrder objects to use for the training. 
+    bbasis_train_order_range: list = field(default_factory=lambda: [-1, -1]) # Order of the BBasis to train. Default is -1, which means all the bbasis functions are trained. If you want to train only a specific order, you can specify it here. 
+    heirarchical_fit: bool = False # If True, the code will fit the basis functions in a heirarchical manner. Default is False, set to True if you want to fit the basis functions in a heirarchical manner.
     name : str = None 
 
 

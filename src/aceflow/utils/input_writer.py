@@ -1,5 +1,5 @@
 from aceflow.utils.config import TrainConfig
-
+from aceflow.reference_objects.BBasis_classes import *
 
 def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None):
     num_basis = trainer_config.num_basis
@@ -12,7 +12,7 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
     ladder_type = trainer_config.ladder_type
     test_size = trainer_config.test_size
     chemsys = trainer_config.chemsys
-    
+  
 
     if isinstance(ladder_step, int):
         ladder_step = [ladder_step]
@@ -121,3 +121,167 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
 
     with open("input.yaml", 'w') as file:
         file.write(content)
+
+
+def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: dict = None):
+    num_basis = trainer_config.num_basis
+    cutoff = trainer_config.cutoff
+    loss_weight = trainer_config.loss_weight
+    max_steps = trainer_config.max_steps
+    batch_size = trainer_config.batch_size
+    gpu_index = trainer_config.gpu_index
+    ladder_step = trainer_config.ladder_step
+    ladder_type = trainer_config.ladder_type
+    test_size = trainer_config.test_size
+    chemsys = trainer_config.chemsys
+    bbasis_train_order_range = trainer_config.bbasis_train_order_range
+    heirachical_fit = trainer_config.heirachical_fit
+    
+    if heirachical_fit:
+        pass #TODO: Implement heirachical fit
+
+    if isinstance(ladder_step, int):
+        ladder_step = [ladder_step]
+      
+    if isinstance(chemsys, dict):
+        reference_energy_dict = chemsys.copy()
+        chemsys = list(chemsys.keys())
+
+    for bbasis in trainer_config.bbasis[:len(chemsys)]:
+        if isinstance(bbasis, UnaryBBasisOrder):
+            unary = bbasis
+        if isinstance(bbasis, BinaryBBasisOrder):
+            binary = bbasis
+        if isinstance(bbasis, TernaryBBasisOrder):
+            ternary = bbasis
+        if isinstance(bbasis, QuaternaryBBasisOrder):
+            quaternary = bbasis
+        if isinstance(bbasis, QuinaryBBasisOrder):
+            quinary = bbasis
+        if isinstance(bbasis, AllBBasisOrder):
+            all_basis = bbasis
+        if isinstance(bbasis, BBasisBonds):
+            bonds = bbasis
+        if isinstance(bbasis, BBasisEmbedding):
+            embedding = bbasis
+
+    basis_order_mapping = {}
+    for bbasis in trainer_config.bbasis:
+        if isinstance(bbasis, FlowBBasisOrder):
+            basis_order_mapping[bbasis.order] = bbasis
+
+    func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
+    for order in func_order_control.keys():
+        if order < len(chemsys):
+            func_order_control[order] = ''
+
+    if bbasis_train_order_range == [-1, -1]:
+        trainable_parameters_control = '#'
+    else:
+        trainable_parameters_control = ''
+    
+    trainable_parameters = []
+    for order in func_order_control.keys():
+        if order < len(chemsys):
+          if order > min(bbasis_train_order_range) and order < max(bbasis_train_order_range):
+            trainable_parameters.append(basis_order_mapping[order].name)
+
+    gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
+
+    ladder_control = '#'
+    if ladder_type:
+        ladder_control = ''
+        ladder_step = [str(step) for step in ladder_step]
+
+    if reference_energy_dict is None:
+        reference_energy_dict = {'Ba': -0.13385613, 'Ti': -1.21095265, 'O': -0.05486302, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611}
+    
+
+    content = f"""
+  cutoff: {cutoff} # cutoff for neighbour list construction
+  seed: 42
+
+  #################################################################
+  ## Metadata section
+  #################################################################
+  metadata:
+    origin: "Automatically generated input via ACEMaker"
+  
+  #################################################################
+  ## Potential definition section
+  #################################################################
+  
+  potential:
+
+    deltaSplineBins: 0.001
+    elements: {chemsys}
+
+    embeddings:
+      ALL: {{
+        npot: {embedding.npot},
+        fs_parameters: {embedding.fs_parameters},
+        ndensity: {embedding.ndensity},
+      }}
+    
+    bonds:
+      ALL: {{
+        radbase: {bonds.radbase},
+        radparameters: {bonds.radparameters},
+        rcut: {bonds.rcut},
+        dcut: {bonds.dcut},
+        NameOfCutoffFunction: {bonds.NameOfCutoffFunction},
+      }}
+
+    functions:
+      number_of_functions_per_element: {num_basis}
+      {func_order_control[0]}UNARY:   {{ nradmax_by_orders: {unary.nradmax_by_orders}, lmax_by_orders: {unary.lmax_by_orders} }}
+      {func_order_control[1]}BINARY:  {{ nradmax_by_orders: {binary.nradmax_by_orders}, lmax_by_orders: {binary.lmax_by_orders} }}
+      {func_order_control[2]}TERNARY: {{ nradmax_by_orders: {ternary.nradmax_by_orders}, lmax_by_orders: {ternary.lmax_by_orders} }}
+      {func_order_control[3]}QUATERNARY: {{ nradmax_by_orders: {quaternary.nradmax_by_orders}, lmax_by_orders: {quaternary.lmax_by_orders} }}
+      {func_order_control[4]}QUINARY: {{ nradmax_by_orders: {quinary.nradmax_by_orders}, lmax_by_orders: {quinary.lmax_by_orders} }}
+      {func_order_control[-1]}ALL:     {{ nradmax_by_orders: {all_basis.nradmax_by_orders}, lmax_by_orders: {all_basis.lmax_by_orders} }}
+    
+  #################################################################
+  ## Dataset specification section
+  #################################################################
+  data:
+    filename: data.pckl.gzip
+    test_size: {test_size}
+    reference_energy: {reference_energy_dict}
+
+  #################################################################
+  ## Fit specification section
+  #################################################################
+
+  fit:
+    loss: {{ kappa: {loss_weight}, L1_coeffs: 1e-8,  L2_coeffs: 1e-8}}
+    optimizer: BFGS
+    maxiter: {max_steps}
+    repulsion: auto
+    {trainable_parameters_control}trainable_parameters: {trainable_parameters}
+    {ladder_control}ladder_step: {ladder_step}
+    {ladder_control}ladder_type: {ladder_type}
+    min_relative_train_loss_per_iter: 5e-5
+    min_relative_test_loss_per_iter: 1e-5
+    early_stopping_patience: 150
+
+  #################################################################
+  ## Backend specification section
+  #################################################################
+
+  backend:
+    evaluator: tensorpot
+    batch_size: {batch_size}
+    batch_size_reduction: True
+    batch_size_reduction_factor: 1.618
+    display_step: 50
+    gpu_config: {{gpu_ind: {gpu_index_str}, mem_limit: 0}}
+  """
+
+    with open("input.yaml", 'w') as file:
+        file.write(content)
+
+
+
+    
+    
