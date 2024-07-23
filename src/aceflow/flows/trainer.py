@@ -230,7 +230,7 @@ class HeirarchicalACEMaker(ACEMaker):
             self.hconfig.initial_potentials.update({f"Order {hiter}": train_checkers[-1].output.trained_potential})
 
         self.trainer_config.bbasis = potential_shape_dict
-        self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, self.hconfig.end_order)]
+        self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, hiter + 1))
 
         for i, loss in enumerate(self.loss_weights):
             self.trainer_config.loss_weight = loss
