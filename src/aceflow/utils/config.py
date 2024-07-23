@@ -19,7 +19,7 @@ class TrainConfig(MSONable):
     upfit: bool = False # If True, the code will use the previous run as an initial guess for the current run and extend the basis set as per the ladder fitting scheme. 
     chemsys: Union[dict, list] = None # A dict mapping the elements to their reference energies. If only a list of elements is provided, the reference energies are taken from precomputed GGA PBEsol energies. 
     bbasis: Dict[str, FlowBBasisOrder] = field(default_factory=lambda: {'UNARY': UnaryBBasisOrder(), 'BINARY': BinaryBBasisOrder(), 'TERNARY': TernaryBBasisOrder(), 'QUATERNARY': QuaternaryBBasisOrder(), 'QINARY': QuinaryBBasisOrder(), 'ALL': AllBBasisOrder(), 'bonds': BBasisBonds(), 'embedding': BBasisEmbedding()}) # List of BBasisOrder objects to use for the training. 
-    bbasis_train_order_range: list = None # Order of the BBasis to train. Default is -1, which means all the bbasis functions are trained. If you want to train only a specific order, you can specify it here. Example: [0, 2] will train only the unary binary, ternary basis functions. [0, 0] will train only the unary basis functions. 
+    bbasis_train_orders: list = None # Order of the BBasis to train. Default is -1, which means all the bbasis functions are trained. If you want to train only a specific order, you can specify it here. Example: [0, 2] will train only the unary binary, ternary basis functions. [0, 0] will train only the unary basis functions. 
     heirarchical_fit: dict = None
     name : str = None 
 
