@@ -148,7 +148,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
         chemsys = list(chemsys.keys())
 
     basis_order_mapping = {}
-    for bbasis in trainer_config.bbasis:
+    for name, bbasis in trainer_config.bbasis.items():
         if isinstance(bbasis, UnaryBBasisOrder):
             unary = bbasis
         if isinstance(bbasis, BinaryBBasisOrder):
