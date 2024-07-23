@@ -179,7 +179,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
       if isinstance(bbasis, BBasisEmbedding):
         embedding = bbasis
       if isinstance(bbasis, FlowBBasisOrder):
-          basis_order_mapping[bbasis.order] = bbasis
+        basis_order_mapping[bbasis.order] = bbasis
 
     func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
     for order in basis_order_mapping.keys():
