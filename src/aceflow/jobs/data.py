@@ -113,9 +113,10 @@ def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MS
     return Response(replace=flow)
 
 @job(acedata='acedata', output_schema=ACEDataTaskDoc)
-def test_potential_in_restricted_space(trained_potential: TrainedPotential, compositions: list, active_learning_config: ActiveLearningConfig):
+def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential, str], compositions: list, active_learning_config: ActiveLearningConfig):
 
-    prev_dir = trained_potential.train_dir
+    if isinstance(trained_potential, TrainedPotential):
+        prev_dir = trained_potential.train_dir
     if os.path.isfile(prev_dir + '/output_potential.yaml'):
         potential_file = prev_dir + "/output_potential.yaml"
     else:
@@ -125,7 +126,7 @@ def test_potential_in_restricted_space(trained_potential: TrainedPotential, comp
     base_calculator.set_active_set(active_set)
     active_structures = []
     chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
-    test_points = generate_test_points(compositions, chemsys, iterations=1, max_points=active_learning_config.max_points)
+    test_points = generate_test_points(compositions, chemsys, iterations=1, sampling_frequency=active_learning_config.sampling_frequency, max_points=active_learning_config.max_points)
     print(len(test_points))
     for point in test_points:
         atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)

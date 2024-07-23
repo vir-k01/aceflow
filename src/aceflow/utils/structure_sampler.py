@@ -66,12 +66,11 @@ def get_boundary_branches(compositions: list, chemsys):
             main_branch = {**main_branch, **branch}
     return main_branch
 
-def generate_test_points(compositions : list, chemsys : list, iterations : int = 3, max_points : int = 500):
+def generate_test_points(compositions : list, chemsys : list, iterations : int = 3, sampling_frequency : int = 5, max_points : int = 100):
     test_points = []
     num_sampled = 0
     base_branches = get_boundary_branches(compositions=compositions, chemsys=chemsys)
-    num_edges = len(list(base_branches.keys()))
-    dist = 5 #int((max_points // (num_edges)**2)**(1/iterations))
+    dist = sampling_frequency
     for i in range(iterations):
         points = list(get_composition_along_branches(alpha=np.linspace(0, 1, dist), branches=base_branches, chemsys=chemsys).values())
         test_points.append([composition for sublist in points for composition in sublist])

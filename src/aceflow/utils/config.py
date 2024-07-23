@@ -26,6 +26,7 @@ class ActiveLearningConfig(MSONable):
     max_points : int = 500 # Maximum number of points to test the potential at in each loop. Default is 500, increase if you want to select more points in each loop. 
     max_structures : int = 500 # Maximum number of structures to add to the active set in each loop. These many DFT statics will be performed. To use every strucure selected by pace_select, set to -1. 
     gamma_max : int = 5 # Cutoff for extrapolation grade. Default is 5, decrease if you to consider more points for the active set.
+    sampling_frequency : int = 5 # Frequency of sampling points for the active learning. Default is 5, increase if you want to sample more points for the active learning.
 
 
 @dataclass
