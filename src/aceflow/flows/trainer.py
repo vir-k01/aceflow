@@ -27,9 +27,6 @@ class ACEMaker(Maker):
 
         if self.trainer_config.chemsys is None:
             raise ValueError("Chemical system must be provided in the trainer config.")
-
-        if not isinstance(data, pd.DataFrame):
-            raise ValueError("Data must be a pandas dataframe with columns for energy, ase_atoms, forces and energy_corrected.")
         
         if not isinstance(data, str):
             try:
@@ -185,9 +182,6 @@ class HeirarchicalACEMaker(ACEMaker):
 
         if self.trainer_config.chemsys is None:
             raise ValueError("Chemical system must be provided in the trainer config.")
-
-        if not isinstance(data, pd.DataFrame):
-            raise ValueError("Data must be a pandas dataframe with columns for energy, ase_atoms, forces and energy_corrected.")
         
         if not isinstance(data, str):
             try:
