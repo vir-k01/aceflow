@@ -190,6 +190,11 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
 
     func_order_control = {0: '#', 1: '#', 2: '#', 3: '#', 4: '#', -1: '#'}
     trainable_parameters_control = '' if bbasis_train_orders else '#'
+    trainable_parameters = []
+    if bbasis_train_orders:
+      for order in bbasis_train_orders:
+        if order < len(chemsys):
+          trainable_parameters.append(basis_order_mapping[order].name)
 
     if embedding is None:
         embedding = BBasisEmbedding()
@@ -213,13 +218,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     if all_basis is None:
         func_order_control[-1] = '#'
         all_basis = AllBBasisOrder()
-    
-    trainable_parameters = []
-    for order in func_order_control.keys():
-        if order < len(chemsys):
-          for order in bbasis_train_orders:
-            trainable_parameters.append(basis_order_mapping[order].name)
-
+  
     gpu_index_str = '-1' if gpu_index is None else str(gpu_index)
 
     ladder_control = '#'
