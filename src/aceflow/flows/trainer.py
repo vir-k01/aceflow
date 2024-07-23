@@ -206,7 +206,7 @@ class HeirarchicalACEMaker(ACEMaker):
         bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
         potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
-        self.hconfig.initial_potentials = pretrained_potentials
+        self.hconfig.initial_potentials = pretrained_potentials if pretrained_potentials else {}
 
         for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
             if hiter > len(self.trainer_config.chemsys):
