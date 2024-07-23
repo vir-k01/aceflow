@@ -10,7 +10,7 @@ from aceflow.jobs.data import consolidate_data
 from aceflow.jobs.train import naive_train_ACE, check_training_output
 import pandas as pd
 import os
-from typing import Union
+from typing import Union, Dict
 
 
 @dataclass
@@ -171,78 +171,80 @@ class ProductionACEMaker(Maker):
         return Flow(job_list, output=train_checkers[-1].output, name=self.name)
     
 
-    @dataclass
-    class HeirarchicalACEMaker(ACEMaker):
-        name : str = 'Heirarchical ACE Maker'
-        hconfig : HeirarchicalFitConfig = field(default_factory=lambda: HeirarchicalFitConfig())
+@dataclass
+class HeirarchicalACEMaker(ACEMaker):
+    name : str = 'Heirarchical ACE Maker'
+    hconfig : HeirarchicalFitConfig = field(default_factory=lambda: HeirarchicalFitConfig())
 
-        def make(self, data: pd.DataFrame, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, data: pd.DataFrame, pretrained_potentials: Dict[str, Union[str, TrainedPotential]] = None) -> Flow:
 
-            trainers = []
-            train_checkers = []
-            job_list = []
-            trained_potential = None
+        trainers = []
+        train_checkers = []
+        job_list = []
+        trained_potential = None
 
-            if self.trainer_config.chemsys is None:
-                raise ValueError("Chemical system must be provided in the trainer config.")
+        if self.trainer_config.chemsys is None:
+            raise ValueError("Chemical system must be provided in the trainer config.")
 
-            if not isinstance(data, pd.DataFrame):
-                raise ValueError("Data must be a pandas dataframe with columns for energy, ase_atoms, forces and energy_corrected.")
-            
-            if not isinstance(data, str):
-                try:
-                    data_path = os.getcwd() + '/data.pckl.gzip'
-                    pd.to_pickle(data, data_path, compression='gzip', protocol=4)
-                except:
-                    raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("Data must be a pandas dataframe with columns for energy, ase_atoms, forces and energy_corrected.")
+        
+        if not isinstance(data, str):
+            try:
+                data_path = os.getcwd() + '/data.pckl.gzip'
+                pd.to_pickle(data, data_path, compression='gzip', protocol=4)
+            except:
+                raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
 
-            '''if pretrained_potential:
-                if isinstance(pretrained_potential, str):
-                    trained_potential = TrainedPotential()
-                    trained_potential.read_potential(pretrained_potential)
-                    if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
-                        trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
+        '''if pretrained_potential:
+            if isinstance(pretrained_potential, str):
+                trained_potential = TrainedPotential()
+                trained_potential.read_potential(pretrained_potential)
+                if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
+                    trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
 
-                if isinstance(pretrained_potential, TrainedPotential):
-                    trained_potential = pretrained_potential
-                else:
-                    raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")'''
-            
-            bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
-            potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
+            if isinstance(pretrained_potential, TrainedPotential):
+                trained_potential = pretrained_potential
+            else:
+                raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")'''
+        
+        bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
+        potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
-            for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
-                if hiter > len(self.trainer_config.chemsys):
-                    break
-                potential_shape_dict.update(bbasis_order_map[hiter])
-                self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, hiter+1)]
-                self.trainer_config.bbasis = potential_shape_dict
-                if hiter > self.hconfig.start_order:
-                    self.trainer_config.max_steps = self.trainer_config.max_steps // 2
-            
-                for i, loss in enumerate(self.loss_weights):
-                    self.trainer_config.loss_weight = loss
-                    if i:
-                        trained_potential = train_checkers[-1].output.trained_potential
-                    self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Order: {hiter}"
-                    trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
-                    trainers[-1].name = self.trainer_config.name
-                    train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
-                    train_checkers[-1].name = self.trainer_config.name + " Checker"
+        self.hconfig.initial_potentials = pretrained_potentials
 
+        for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
+            if hiter > len(self.trainer_config.chemsys):
+                break
+            potential_shape_dict.update(bbasis_order_map[hiter])
+            self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, hiter+1)]
             self.trainer_config.bbasis = potential_shape_dict
-            self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, self.hconfig.end_order)]
-
+            if hiter > self.hconfig.start_order:
+                self.trainer_config.max_steps = self.trainer_config.max_steps // 2
+        
             for i, loss in enumerate(self.loss_weights):
                 self.trainer_config.loss_weight = loss
                 if i:
                     trained_potential = train_checkers[-1].output.trained_potential
-                self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Final Run"
+                self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Order: {hiter}"
                 trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
                 trainers[-1].name = self.trainer_config.name
                 train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
                 train_checkers[-1].name = self.trainer_config.name + " Checker"
 
-            job_list.extend(trainers)
-            job_list.extend(train_checkers)
-            return Flow(job_list, output=train_checkers[-1].output, name=self.name)
+        self.trainer_config.bbasis = potential_shape_dict
+        self.trainer_config.bbasis_train_orders = [range(self.hconfig.start_order, self.hconfig.end_order)]
+
+        for i, loss in enumerate(self.loss_weights):
+            self.trainer_config.loss_weight = loss
+            if i:
+                trained_potential = train_checkers[-1].output.trained_potential
+            self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Final Run"
+            trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
+            trainers[-1].name = self.trainer_config.name
+            train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
+            train_checkers[-1].name = self.trainer_config.name + " Checker"
+
+        job_list.extend(trainers)
+        job_list.extend(train_checkers)
+        return Flow(job_list, output=train_checkers[-1].output, name=self.name)
