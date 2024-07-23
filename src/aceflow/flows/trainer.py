@@ -215,8 +215,9 @@ class HeirarchicalACEMaker(ACEMaker):
             self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, hiter + 1))
             self.trainer_config.bbasis = potential_shape_dict
             if hiter > self.hconfig.start_order:
-                self.trainer_config.max_steps = self.trainer_config.max_steps // 2
-        
+                self.trainer_config.max_steps = self.trainer_config.max_steps
+            self.trainer_config.heirachical_fit = self.hconfig
+            
             for i, loss in enumerate(self.loss_weights):
                 self.trainer_config.loss_weight = loss
                 if i:
