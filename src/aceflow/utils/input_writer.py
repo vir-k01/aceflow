@@ -135,7 +135,7 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     test_size = trainer_config.test_size
     chemsys = trainer_config.chemsys
     bbasis_train_order_range = trainer_config.bbasis_train_order_range
-    heirachical_fit = trainer_config.heirachical_fit
+    heirachical_fit = trainer_config.heirarchical_fit
     
     if heirachical_fit:
         pass #TODO: Implement heirachical fit
