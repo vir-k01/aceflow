@@ -57,9 +57,9 @@ def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None)
     trained_potential.read_training_dir()
 
     if trained_potential.status == 'incomplete':
-        if trainer_config.restart:
+        if trainer_config.restart_failed_runs:
             trainer_config.max_steps = trainer_config.max_steps // 2
-            return Response(replace=naive_train_ACE(computed_data_set=prev_run_dir, trainer_config=trainer_config, trained_potential=trained_potential))
+            return Response(addition=naive_train_ACE(computed_data_set=prev_run_dir, trainer_config=trainer_config, trained_potential=trained_potential))
 
     #dataset = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
     with open(prev_run_dir + '/log.txt') as f:
