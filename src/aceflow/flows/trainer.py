@@ -19,7 +19,7 @@ class ACEMaker(Maker):
     trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
     loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
 
-    def make(self, data: pd.DataFrame, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, data: Union[pd.DataFrame, str], pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
         trainers = []
         train_checkers = []
         job_list = []
@@ -176,7 +176,7 @@ class HeirarchicalACEMaker(ACEMaker):
     name : str = 'Heirarchical ACE Maker'
     hconfig : HeirarchicalFitConfig = field(default_factory=lambda: HeirarchicalFitConfig())
 
-    def make(self, data: pd.DataFrame, pretrained_potentials: Dict[str, Union[str, TrainedPotential]] = None) -> Flow:
+    def make(self, data: Union[str, pd.DataFrame], pretrained_potentials: Dict[str, Union[str, TrainedPotential]] = None) -> Flow:
 
         trainers = []
         train_checkers = []
