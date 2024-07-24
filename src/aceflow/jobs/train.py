@@ -18,15 +18,15 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
             raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
     
-    
-    if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
-        processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
-        computed_data_set.drop(columns=['ase_atoms'], inplace=True)
-        computed_data_set['ase_atoms'] = processed_atoms
+    if isinstance(computed_data_set, pd.DataFrame):
+        if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
+            processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
+            computed_data_set.drop(columns=['ase_atoms'], inplace=True)
+            computed_data_set['ase_atoms'] = processed_atoms
 
     if isinstance(computed_data_set, str):
         try:
-            subprocess.run(f"cp {computed_data_set}/data.pckl.gzip .", shell=True)
+            subprocess.run(f"cp {computed_data_set} .", shell=True)
         except:
             raise FileNotFoundError("No data found in the provided directory.")
     
@@ -83,15 +83,15 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
             raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
         
-    
-    if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
-        processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
-        computed_data_set.drop(columns=['ase_atoms'], inplace=True)
-        computed_data_set['ase_atoms'] = processed_atoms
+    if isinstance(computed_data_set, pd.DataFrame):
+        if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
+            processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
+            computed_data_set.drop(columns=['ase_atoms'], inplace=True)
+            computed_data_set['ase_atoms'] = processed_atoms
 
     if isinstance(computed_data_set, str):
         try:
-            subprocess.run(f"cp {computed_data_set}/data.pckl.gzip .", shell=True)
+            subprocess.run(f"cp {computed_data_set} .", shell=True)
         except:
             raise FileNotFoundError("No data found in the provided directory.")
     

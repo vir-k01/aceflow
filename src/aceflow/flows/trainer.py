@@ -33,6 +33,7 @@ class ACEMaker(Maker):
             try:
                 data_path = os.getcwd() + '/data.pckl.gzip'
                 pd.to_pickle(data, data_path, compression='gzip', protocol=4)
+                data = data_path
             except:
                 raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
 
@@ -123,6 +124,7 @@ class ProductionACEMaker(Maker):
             try:
                 precomputed_data_path = os.getcwd() + '/precomputed_data.pckl.gzip'
                 pd.to_pickle(precomputed_data, precomputed_data_path, compression='gzip', protocol=4)
+                precomputed_data = precomputed_data_path
             except:
                 raise ValueError("Due to JobStore issues, precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
     
@@ -193,6 +195,7 @@ class HeirarchicalACEMaker(ACEMaker):
             try:
                 data_path = os.getcwd() + '/data.pckl.gzip'
                 pd.to_pickle(data, data_path, compression='gzip', protocol=4)
+                data = data_path
             except:
                 raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
 
