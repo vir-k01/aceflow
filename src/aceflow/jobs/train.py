@@ -91,7 +91,7 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
 
     if isinstance(computed_data_set, str):
         try:
-            subprocess.run(f"cp {computed_data_set} .", shell=True)
+            subprocess.run(f"cp {computed_data_set} data.pckl.gzip", shell=True)
         except:
             raise FileNotFoundError("No data found in the provided directory.")
     
