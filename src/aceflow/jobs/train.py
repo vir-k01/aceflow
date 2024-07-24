@@ -17,6 +17,12 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
         if computed_data_set.get('ase_atoms') is None:
             raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
+
+    if isinstance(computed_data_set, str):
+        try:
+            computed_data_set = pd.read_pickle(computed_data_set, compression='gzip')
+        except:
+            raise FileNotFoundError("No data found in the provided directory.")
     
     if isinstance(computed_data_set, pd.DataFrame):
         if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
@@ -24,12 +30,6 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
             computed_data_set.drop(columns=['ase_atoms'], inplace=True)
             computed_data_set['ase_atoms'] = processed_atoms
         computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
-
-    if isinstance(computed_data_set, str):
-        try:
-            subprocess.run(f"cp {computed_data_set} .", shell=True)
-        except:
-            raise FileNotFoundError("No data found in the provided directory.")
     
     if list_physical_devices('GPU'):
         trainer_config.gpu_index = 0
@@ -81,6 +81,9 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
         if computed_data_set.get('ase_atoms') is None:
             raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
+
+    if isinstance(computed_data_set, str):
+        computed_data_set = pd.read_pickle(computed_data_set, compression='gzip')
         
     if isinstance(computed_data_set, pd.DataFrame):
         if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
@@ -88,9 +91,6 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
             computed_data_set.drop(columns=['ase_atoms'], inplace=True)
             computed_data_set['ase_atoms'] = processed_atoms
         computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
-
-    if isinstance(computed_data_set, str):
-        subprocess.run(f"cp {computed_data_set} ./data.pckl.gzip", shell=True)
     
     if list_physical_devices('GPU'):
         trainer_config.gpu_index = 0
