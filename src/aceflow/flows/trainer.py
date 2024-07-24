@@ -209,7 +209,7 @@ class HeirarchicalACEMaker(ACEMaker):
         initial_potentials = pretrained_potentials if pretrained_potentials else {}
         counter = 0
 
-        for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
+        for hiter in range(self.hconfig.start_order, self.hconfig.end_order+1):
             if hiter is 0:
                 continue
             if hiter > len(self.trainer_config.chemsys):
