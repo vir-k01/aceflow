@@ -29,13 +29,13 @@ class ACEMaker(Maker):
         if self.trainer_config.chemsys is None:
             raise ValueError("Chemical system must be provided in the trainer config.")
         
-        if not isinstance(data, str):
+        '''if not isinstance(data, str):
             try:
                 data_path = os.getcwd() + '/data.pckl.gzip'
                 pd.to_pickle(data, data_path, compression='gzip', protocol=4)
                 data = data_path
             except:
-                raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
+                raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")'''
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
@@ -120,14 +120,14 @@ class ProductionACEMaker(Maker):
             job_list.append(data)
             data_output = data.output
         
-        if not isinstance(precomputed_data, str):
+        '''if not isinstance(precomputed_data, str):
             try:
                 precomputed_data_path = os.getcwd() + '/precomputed_data.pckl.gzip'
                 pd.to_pickle(precomputed_data, precomputed_data_path, compression='gzip', protocol=4)
                 precomputed_data = precomputed_data_path
             except:
                 raise ValueError("Due to JobStore issues, precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
-    
+    '''
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
 
 
@@ -191,14 +191,14 @@ class HeirarchicalACEMaker(ACEMaker):
         if self.trainer_config.chemsys is None:
             raise ValueError("Chemical system must be provided in the trainer config.")
         
-        if not isinstance(data, str):
+        '''if not isinstance(data, str):
             try:
                 data_path = os.getcwd() + '/data.pckl.gzip'
                 pd.to_pickle(data, data_path, compression='gzip', protocol=4)
                 data = data_path
             except:
                 raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
-
+'''
         '''if pretrained_potential:
             if isinstance(pretrained_potential, str):
                 trained_potential = TrainedPotential()
@@ -227,7 +227,8 @@ class HeirarchicalACEMaker(ACEMaker):
             self.trainer_config.bbasis = potential_shape_dict
             if hiter > self.hconfig.start_order:
                 #self.trainer_config.max_steps = self.trainer_config.max_steps // 1
-                initial_potentials= {f"Order_{hiter}": train_checkers[-1].output.trained_potential}
+                if train_checkers:
+                    initial_potentials= {f"Order_{hiter}": train_checkers[-1].output.trained_potential}
 
 
             for i, loss in enumerate(self.loss_weights):
@@ -242,7 +243,7 @@ class HeirarchicalACEMaker(ACEMaker):
             counter += 1
 
         self.trainer_config.bbasis = potential_shape_dict
-        self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, hiter + 1))
+        self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, self.hconfig.end_order+1))
 
         for i, loss in enumerate(self.loss_weights):
             self.trainer_config.loss_weight = loss
