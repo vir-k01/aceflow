@@ -23,6 +23,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
             processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
             computed_data_set.drop(columns=['ase_atoms'], inplace=True)
             computed_data_set['ase_atoms'] = processed_atoms
+        computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
 
     if isinstance(computed_data_set, str):
         try:
@@ -88,6 +89,7 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
             processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
             computed_data_set.drop(columns=['ase_atoms'], inplace=True)
             computed_data_set['ase_atoms'] = processed_atoms
+        computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
 
     if isinstance(computed_data_set, str):
         try:
@@ -103,8 +105,6 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
 
     trainer_config.initial_potentials = initial_potentials if initial_potentials else None
     
-    data_set = computed_data_set
-    data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     flexible_input_writer(trainer_config)
     init_control = '-ip' if trainer_config.upfit else '-p'
 
