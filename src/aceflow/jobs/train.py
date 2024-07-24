@@ -90,10 +90,7 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
         computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
 
     if isinstance(computed_data_set, str):
-        try:
-            subprocess.run(f"cp {computed_data_set} data.pckl.gzip", shell=True)
-        except:
-            raise FileNotFoundError("No data found in the provided directory.")
+        subprocess.run(f"cp {computed_data_set} ./data.pckl.gzip", shell=True)
     
     if list_physical_devices('GPU'):
         trainer_config.gpu_index = 0
