@@ -14,9 +14,10 @@ from tensorflow.config import list_physical_devices
 def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None) -> str:
 
     if isinstance(computed_data_set, dict):
+        if computed_data_set.get('ase_atoms') is None:
+            raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
-    if computed_data_set.get('ase_atoms') is None:
-        raise ValueError("Computed data set must contain ase_atoms column.")
+    
     
     if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
         processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
@@ -78,9 +79,10 @@ def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None)
 def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None, initial_potentials: dict = None) -> str:
 
     if isinstance(computed_data_set, dict):
+        if computed_data_set.get('ase_atoms') is None:
+            raise ValueError("Computed data set must contain ase_atoms column.")
         computed_data_set = pd.DataFrame.from_dict(computed_data_set)
-    if computed_data_set.get('ase_atoms') is None:
-        raise ValueError("Computed data set must contain ase_atoms column.")
+        
     
     if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
         processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
