@@ -37,8 +37,6 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
     if trainer_config.ladder_type:
         trainer_config.upfit = True
     
-    data_set = computed_data_set
-    data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     flexible_input_writer(trainer_config)
     init_control = '-ip' if trainer_config.upfit else '-p'
 
