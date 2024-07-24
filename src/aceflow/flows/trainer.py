@@ -212,7 +212,7 @@ class HeirarchicalACEMaker(ACEMaker):
                 raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")'''
         
         bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
-        potential_shape_dict = {"bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
+        potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
         initial_potentials = pretrained_potentials if pretrained_potentials else {}
         counter = 0
@@ -226,7 +226,7 @@ class HeirarchicalACEMaker(ACEMaker):
             if hiter > self.hconfig.start_order:
                 #self.trainer_config.max_steps = self.trainer_config.max_steps // 1
                 if train_checkers:
-                    initial_potentials= {f"Order_{hiter}": train_checkers[-1].output.trained_potential}
+                    initial_potentials= {f"order_{hiter}": train_checkers[-1].output.trained_potential}
 
 
             for i, loss in enumerate(self.loss_weights):

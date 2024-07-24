@@ -8,7 +8,6 @@ from aceflow.core.model import TrainedPotential
 import os
 from typing import Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
-from tensorflow.config import list_physical_devices
 
 @job
 def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None) -> str:
@@ -31,9 +30,11 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
             computed_data_set['ase_atoms'] = processed_atoms
         computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     
-    if list_physical_devices('GPU'):
-        trainer_config.gpu_index = 0
-    
+    if trainer_config.gpu_index == -1:
+        from tensorflow.config import list_physical_devices
+        if list_physical_devices('GPU'):
+            trainer_config.gpu_index = 0
+        
     if trainer_config.ladder_type:
         trainer_config.upfit = True
     
@@ -92,8 +93,10 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
             computed_data_set['ase_atoms'] = processed_atoms
         computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
     
-    if list_physical_devices('GPU'):
-        trainer_config.gpu_index = 0
+    if trainer_config.gpu_index == -1:
+        from tensorflow.config import list_physical_devices
+        if list_physical_devices('GPU'):
+            trainer_config.gpu_index = 0
     
     if trainer_config.ladder_type:
         trainer_config.upfit = True
