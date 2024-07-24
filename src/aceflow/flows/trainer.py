@@ -207,6 +207,7 @@ class HeirarchicalACEMaker(ACEMaker):
         potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
         initial_potentials = pretrained_potentials if pretrained_potentials else {}
+        counter = 0
 
         for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
             if hiter is 0:
@@ -223,12 +224,12 @@ class HeirarchicalACEMaker(ACEMaker):
                 self.trainer_config.loss_weight = loss
                 if i:
                     trained_potential = train_checkers[-1].output.trained_potential
-                self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Order: {hiter}"
+                self.trainer_config.name = f"Step {counter}.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Order: {hiter}"
                 trainers.append(naive_train_hACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential, initial_potentials=initial_potentials))
                 trainers[-1].name = self.trainer_config.name
                 train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
                 train_checkers[-1].name = self.trainer_config.name + " Checker"
-            
+            counter += 1
             initial_potentials.update({f"Order {hiter}": train_checkers[-1].output.trained_potential})
 
         self.trainer_config.bbasis = potential_shape_dict
@@ -238,8 +239,8 @@ class HeirarchicalACEMaker(ACEMaker):
             self.trainer_config.loss_weight = loss
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
-            self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Final Run"
-            trainers.append(naive_train_hACE(data, trainer_config=self.trainer_config, initial_potentials=initial_potentials))
+            self.trainer_config.name = f"Step {counter}.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Final Run"
+            trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"
