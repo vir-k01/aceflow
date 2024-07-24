@@ -212,14 +212,12 @@ class HeirarchicalACEMaker(ACEMaker):
                 raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")'''
         
         bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
-        potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
+        potential_shape_dict = {"bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
         initial_potentials = pretrained_potentials if pretrained_potentials else {}
         counter = 0
 
         for hiter in range(self.hconfig.start_order, self.hconfig.end_order+1):
-            if hiter == 0:
-                continue
             if hiter == len(self.trainer_config.chemsys):
                 break
             potential_shape_dict.update(bbasis_order_map[hiter])
