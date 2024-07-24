@@ -136,28 +136,25 @@ def flexible_input_writer(trainer_config : TrainConfig, reference_energy_dict: d
     test_size = trainer_config.test_size
     chemsys = trainer_config.chemsys
     bbasis_train_orders = trainer_config.bbasis_train_orders
-    heirachical_fit = trainer_config.heirarchical_fit
+    initial_potentials = trainer_config.initial_potentials
 
 
     embedding, bonds, unary, binary, ternary, quaternary, quinary, all_basis = [None]*8
     initial_potentials_paths = []
 
     initial_potentials_control = '#'
-    initial_potentials = 'None'
     
-    if heirachical_fit:
-        if heirachical_fit.initial_potentials:
-          initial_potentials_control = ''
-          initial_potentials = heirachical_fit.initial_potentials
+    if initial_potentials:
+        initial_potentials_control = ''
 
-          if isinstance(initial_potentials, dict):
-              for k,p in initial_potentials.items():
-                  if isinstance(p, TrainedPotential):
-                      TrainedPotential().dump_potential(p.interim_potential, 'initial_potential_'+k+'.yaml')
-                  if isinstance(p, dict):
-                      TrainedPotential().dump_potential(p['interim_potential'], 'initial_potential_'+k+'.yaml')
-                  initial_potentials_paths.append('initial_potential_'+k+'.yaml')
-                  
+        if isinstance(initial_potentials, dict):
+            for k,p in initial_potentials.items():
+                if isinstance(p, TrainedPotential):
+                    TrainedPotential().dump_potential(p.interim_potential, 'initial_potential_'+k+'.yaml')
+                if isinstance(p, dict):
+                    TrainedPotential().dump_potential(p['interim_potential'], 'initial_potential_'+k+'.yaml')
+                initial_potentials_paths.append('initial_potential_'+k+'.yaml')
+
     if isinstance(ladder_step, int):
         ladder_step = [ladder_step]
       

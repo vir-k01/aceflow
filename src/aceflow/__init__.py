@@ -1,4 +1,4 @@
-from aceflow.jobs.train import naive_train_ACE
+from aceflow.jobs.train import naive_train_ACE, naive_train_hACE
 from aceflow.jobs.data import read_MD_outputs, test_potential_in_restricted_space, consolidate_data
 from aceflow.utils.input_writer import write_input, flexible_input_writer
 from aceflow.utils.structure_sampler import generate_test_points

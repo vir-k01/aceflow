@@ -7,7 +7,7 @@ from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfi
 from aceflow.reference_objects.BBasis_classes import *
 from aceflow.core.model import TrainedPotential
 from aceflow.jobs.data import consolidate_data
-from aceflow.jobs.train import naive_train_ACE, check_training_output
+from aceflow.jobs.train import naive_train_ACE, check_training_output, naive_train_hACE
 import pandas as pd
 import os
 import numpy as np
@@ -206,29 +206,30 @@ class HeirarchicalACEMaker(ACEMaker):
         bbasis_order_map = {0: {"UNARY": UnaryBBasisOrder()}, 1: {"BINARY": BinaryBBasisOrder()}, 2: {"TERNARY": TernaryBBasisOrder()}, 3: {"QUARTERNARY": QuaternaryBBasisOrder()}, 4: {"QUINARY": QuinaryBBasisOrder()}}
         potential_shape_dict = {"UNARY": UnaryBBasisOrder(), "bonds": BBasisBonds(), "embedding": BBasisEmbedding()}
 
-        self.hconfig.initial_potentials = pretrained_potentials if pretrained_potentials else {}
+        initial_potentials = pretrained_potentials if pretrained_potentials else {}
 
         for hiter in range(self.hconfig.start_order, self.hconfig.end_order):
+            if hiter is 0:
+                continue
             if hiter > len(self.trainer_config.chemsys):
                 break
             potential_shape_dict.update(bbasis_order_map[hiter])
             self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, hiter + 1))
             self.trainer_config.bbasis = potential_shape_dict
             if hiter > self.hconfig.start_order:
-                self.trainer_config.max_steps = self.trainer_config.max_steps
-            self.trainer_config.heirachical_fit = self.hconfig
-            
+                self.trainer_config.max_steps = self.trainer_config.max_steps //2
+
             for i, loss in enumerate(self.loss_weights):
                 self.trainer_config.loss_weight = loss
                 if i:
                     trained_potential = train_checkers[-1].output.trained_potential
                 self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Order: {hiter}"
-                trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
+                trainers.append(naive_train_hACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential, initial_potentials=initial_potentials))
                 trainers[-1].name = self.trainer_config.name
                 train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
                 train_checkers[-1].name = self.trainer_config.name + " Checker"
             
-            self.hconfig.initial_potentials.update({f"Order {hiter}": train_checkers[-1].output.trained_potential})
+            initial_potentials.update({f"Order {hiter}": train_checkers[-1].output.trained_potential})
 
         self.trainer_config.bbasis = potential_shape_dict
         self.trainer_config.bbasis_train_orders = list(np.arange(self.hconfig.start_order, hiter + 1))
@@ -238,7 +239,7 @@ class HeirarchicalACEMaker(ACEMaker):
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
             self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}, Final Run"
-            trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
+            trainers.append(naive_train_hACE(data, trainer_config=self.trainer_config, initial_potentials=initial_potentials))
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"

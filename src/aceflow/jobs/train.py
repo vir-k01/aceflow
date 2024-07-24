@@ -3,7 +3,7 @@ import pandas as pd
 import subprocess
 from aceflow.utils.input_writer import write_input, flexible_input_writer
 from aceflow.schemas.core import ACETrainerTaskDoc
-from aceflow.utils.config import TrainConfig
+from aceflow.utils.config import TrainConfig, HeirarchicalFitConfig
 from aceflow.core.model import TrainedPotential
 import os
 from typing import Union
@@ -72,3 +72,47 @@ def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None)
     doc = ACETrainerTaskDoc(**doc_data)
     doc.task_label = trainer_config.name
     return doc
+
+
+@job
+def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None, initial_potentials: dict = None) -> str:
+
+    if isinstance(computed_data_set, dict):
+        computed_data_set = pd.DataFrame.from_dict(computed_data_set)
+    if computed_data_set.get('ase_atoms') is None:
+        raise ValueError("Computed data set must contain ase_atoms column.")
+    
+    if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
+        processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
+        computed_data_set.drop(columns=['ase_atoms'], inplace=True)
+        computed_data_set['ase_atoms'] = processed_atoms
+
+    if isinstance(computed_data_set, str):
+        try:
+            subprocess.run(f"cp {computed_data_set}/data.pckl.gzip .", shell=True)
+        except:
+            raise FileNotFoundError("No data found in the provided directory.")
+    
+    if list_physical_devices('GPU'):
+        trainer_config.gpu_index = 0
+    
+    if trainer_config.ladder_type:
+        trainer_config.upfit = True
+
+    trainer_config.initial_potentials = initial_potentials if initial_potentials else None
+    
+    data_set = computed_data_set
+    data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
+    flexible_input_writer(trainer_config)
+    init_control = '-ip' if trainer_config.upfit else '-p'
+
+    if trained_potential is not None:
+        if isinstance(trained_potential, dict):
+            trained_potential = TrainedPotential.from_dict(trained_potential)
+        potential = trained_potential.output_potential
+        TrainedPotential().dump_potential(potential, 'continue.yaml')
+        subprocess.run(f"pacemaker {init_control} continue.yaml input.yaml", shell=True)
+    else:
+        subprocess.run("pacemaker input.yaml", shell=True)
+    
+    return os.getcwd()
