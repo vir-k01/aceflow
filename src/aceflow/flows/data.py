@@ -118,7 +118,7 @@ class ActiveStructuresFlowMaker(Maker):
         if isinstance(self.active_learning_config.sampling_strategy, List):
             for strategy in self.active_learning_config.sampling_strategy:
                 active_structures = test_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
-                structures.extend(active_structures.output.acedata)
+                structures.append(active_structures.output.acedata)
         
         if self.static_maker is None:
             self.static_maker = StaticMaker()

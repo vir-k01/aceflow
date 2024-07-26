@@ -88,7 +88,7 @@ def consolidate_data(data: List[Union[dict, pd.DataFrame, str]]):
     return doc
 
 @job
-def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MSONAtoms]]):
+def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MSONAtoms, list]]):
 
     all_structures = []
     for structure in structures:
@@ -98,6 +98,8 @@ def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MS
             all_structures.extend([AseAtomsAdaptor().get_structure(structure) for structure in structures])
         if isinstance(structure, Structure):
             all_structures.extend([structure])
+        if isinstance(structure, list):
+            all_structures.extend([AseAtomsAdaptor().get_structure(structure_) for structure_ in structure])
 
     '''if isinstance(structures, dict):
         structures = [AseAtomsAdaptor().get_structure(structure) for structure in structures['ase_atoms']]
