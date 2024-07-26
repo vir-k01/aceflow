@@ -9,6 +9,9 @@ from pyace.activelearning import compute_B_projections, compute_active_set, comp
 from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, select_structures_maxvol
 
 from ase.md.langevin import Langevin
+from ase import Atoms
+from pymatgen.io.ase import MSONAtoms
+from typing import Union
 from ase import units
 
 
@@ -101,7 +104,7 @@ def select_structures_with_active_set(potential_file: str, active_set: str, data
     return df_selected
 
 
-def run_NVT_MD(calculator: PyACECalculator, atoms, num_steps=100, temperature=5000):
+def run_NVT_MD(calculator : PyACECalculator, atoms : Union[Atoms, MSONAtoms], num_steps=100, temperature=5000):
     atoms.set_calculator(calculator)
     T=temperature
     dyn = Langevin(atoms, 0.5 * units.fs, T * units.kB, 0.002)
