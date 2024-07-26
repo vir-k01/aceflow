@@ -149,7 +149,7 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
     sampler.base_calculator.set_active_set(active_set)
 
     active_structures = sampler.sample_structures(compositions)
-
+    print(len(active_structures))
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=sampler.max_structures)
 
