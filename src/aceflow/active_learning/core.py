@@ -5,7 +5,7 @@ from atomate2.common.jobs.structure_gen import get_random_packed
 from pymatgen.io.ase import AseAtomsAdaptor
 from mp_api.client import MPRester
 from aceflow.active_learning.active_learning import run_NVT_MD
-from pyace.activeexploaration import ActiveExploration
+from pyace.activeexploration import ActiveExploration
 from pyace.basis_configuration import BBasisConfiguration
 
 
