@@ -6,7 +6,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from mp_api.client import MPRester
 from aceflow.active_learning.active_learning import run_NVT_MD
 from pyace.activeexploration import ActiveExploration
-from pyace.basis_configuration import BBasisConfiguration
+from pyace.basis import BBasisConfiguration
 
 
 @dataclass
