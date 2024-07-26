@@ -132,6 +132,8 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
         potential_file = trained_potential
         if active_set_file is not None:
             active_set = active_set_file
+        else:
+            active_set = potential_file.replace(".yaml", ".asi")
 
     '''else:
         prev_dir = trained_potential
