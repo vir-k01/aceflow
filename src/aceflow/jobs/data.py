@@ -116,19 +116,26 @@ def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MS
     return Response(replace=flow)
 
 @job(acedata='acedata', output_schema=ACEDataTaskDoc)
-def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential, str], compositions: list, sampling_strategy: BaseActiveLearningStrategy = None):
+def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential, str], compositions: list, sampling_strategy: BaseActiveLearningStrategy = None, active_set_file: str = None):
 
+    prev_dir = None
     if isinstance(trained_potential, TrainedPotential):
         prev_dir = trained_potential.train_dir
     if isinstance(trained_potential, dict):
         prev_dir = trained_potential['train_dir']
+    if isinstance(trained_potential, str):
+        potential_file = trained_potential
+        if active_set_file is not None:
+            active_set = active_set_file
+
     else:
         prev_dir = trained_potential
-    if os.path.isfile(prev_dir + '/output_potential.yaml'):
-        potential_file = prev_dir + "/output_potential.yaml"
-    else:
-        potential_file = prev_dir + '/interim_potential_0.yaml'
-    active_set = potential_file.replace(".yaml", ".asi")
+    if prev_dir:
+        if os.path.isfile(prev_dir + '/output_potential.yaml'):
+            potential_file = prev_dir + "/output_potential.yaml"
+        else:
+            potential_file = prev_dir + '/interim_potential_0.yaml'
+        active_set = potential_file.replace(".yaml", ".asi")
 
     sampler = sampling_strategy
     sampler.base_calculator = PyACECalculator(potential_file)

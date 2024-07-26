@@ -103,6 +103,7 @@ class ActiveStructuresFlowMaker(Maker):
 
         if self.active_learning_config.sampling_strategy is None:
             self.active_learning_config.sampling_strategy = RandomPackedSampler()
+    
         
         if self.active_learning_config.sampling_strategy.gamma_high is None:
             self.active_learning_config.sampling_strategy.gamma_high = self.active_learning_config.gamma_high
