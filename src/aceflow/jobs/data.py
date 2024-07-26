@@ -93,7 +93,10 @@ def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MS
     all_structures = []
     for structure in structures:
         if isinstance(structure, dict):
-            all_structures.extend([AseAtomsAdaptor().get_structure(structure_) for structure_ in structure['ase_atoms']]) # if structure is a dict of structures
+            if 'ase_atoms' in structure.keys():
+                all_structures.extend([AseAtomsAdaptor().get_structure(structure_) for structure_ in structure['ase_atoms']]) # if structure is a dict of structures
+            else:
+                raise ValueError("Invalid structure format. Must be a dict with 'ase_atoms' key.")
         if isinstance(structure, MSONAtoms):
             all_structures.extend([AseAtomsAdaptor().get_structure(structure) for structure in structures])
         if isinstance(structure, Structure):
@@ -153,7 +156,7 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=sampler.max_structures)
 
-    data = {'acedata': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
+    data = {'ase_atoms': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
     doc = ACEDataTaskDoc(**{'acedata': data})
     doc.task_label = 'Active Structures Generation'
     return doc
