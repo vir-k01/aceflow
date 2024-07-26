@@ -137,7 +137,7 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
     active_structures = sampler.sample_structures(compositions)
 
     df = pd.DataFrame({'ase_atoms': active_structures})
-    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
+    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=sampler.max_structures)
 
     data = {'acedata': [AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
     doc = ACEDataTaskDoc(**{'acedata': data})
