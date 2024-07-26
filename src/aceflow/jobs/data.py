@@ -121,9 +121,11 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
     prev_dir = None
     if isinstance(trained_potential, TrainedPotential):
         TrainedPotential().dump_potential(trained_potential.output_potential, 'output_potential.yaml')
+        potential_file = 'output_potential.yaml'
         active_set = trained_potential.active_set_file
     if isinstance(trained_potential, dict):
         TrainedPotential().dump_potential(trained_potential['output_potential'], 'output_potential.yaml')
+        potential_file = 'output_potential.yaml'
         active_set = trained_potential['active_set_file']
     
     if isinstance(trained_potential, str):
@@ -131,14 +133,14 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
         if active_set_file is not None:
             active_set = active_set_file
 
-    else:
+    '''else:
         prev_dir = trained_potential
     if prev_dir:
         if os.path.isfile(prev_dir + '/output_potential.yaml'):
             potential_file = prev_dir + "/output_potential.yaml"
         else:
             potential_file = prev_dir + '/interim_potential_0.yaml'
-        active_set = potential_file.replace(".yaml", ".asi")
+        active_set = potential_file.replace(".yaml", ".asi")'''
 
     sampler = sampling_strategy
     sampler.base_calculator = PyACECalculator(potential_file)
