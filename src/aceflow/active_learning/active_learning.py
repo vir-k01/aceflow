@@ -101,11 +101,11 @@ def select_structures_with_active_set(potential_file: str, active_set: str, data
     return df_selected
 
 
-def psuedo_equilibrate_and_test(calculator: PyACECalculator, atoms):
+def run_NVT_MD(calculator: PyACECalculator, atoms, num_steps=100, temperature=5000):
     atoms.set_calculator(calculator)
-    T=5000
-    dyn = Langevin(atoms, 1 * units.fs, T * units.kB, 0.002)
-    dyn.run(100)
-    if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > 1000:
-        return [atoms, 1000]
-    return [atoms, np.max(calculator.results['gamma'])]
+    T=temperature
+    dyn = Langevin(atoms, 0.5 * units.fs, T * units.kB, 0.002)
+    dyn.run(num_steps)
+    #if atoms.get_kinetic_energy()/(1.5 * units.kB * T) > temperature*20:
+    #    return [atoms, 1000]
+    return [atoms, np.min([np.max(calculator.results['gamma']), 1000])]

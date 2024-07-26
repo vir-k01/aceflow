@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from monty.json import MSONable
 import yaml
 import os
-from aceflow.core.active_learning import get_active_set
+from aceflow.active_learning.active_learning import get_active_set
 from aceflow.utils.config import TrainConfig
 import pandas as pd
 

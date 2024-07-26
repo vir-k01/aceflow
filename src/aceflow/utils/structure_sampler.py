@@ -66,7 +66,8 @@ def get_boundary_branches(compositions: list, chemsys):
             main_branch = {**main_branch, **branch}
     return main_branch
 
-def generate_test_points(compositions : list, chemsys : list, iterations : int = 3, sampling_frequency : int = 5, max_points : int = 100):
+
+def get_random_packed_points(compositions : list, chemsys : list, iterations : int = 3, sampling_frequency : int = 5, max_points : int = 100, target_atoms : int = 100):
     test_points = []
     num_sampled = 0
     base_branches = get_boundary_branches(compositions=compositions, chemsys=chemsys)
@@ -82,7 +83,7 @@ def generate_test_points(compositions : list, chemsys : list, iterations : int =
     test_compositions = [composition for sublist in test_points for composition in sublist]
     test_compositions = list(set(test_compositions))
 
-    test_structures = [get_random_packed(composition, vol_exp=1.2) for composition in test_compositions for i in range(5)]
+    test_structures = [get_random_packed(composition, vol_exp=1.2, target_atoms=target_atoms) for composition in test_compositions for i in range(5)]
 
     test_structures_with_oxi = []
     test_atoms = []
@@ -96,5 +97,5 @@ def generate_test_points(compositions : list, chemsys : list, iterations : int =
             test_structures.remove(test_structure)
         test_atoms.append(AseAtomsAdaptor().get_atoms(test_structure))
         
-    #TODO: add functionality to change num atoms in structure
+    #TODO: add functionality to change num atoms in structure, subsample from larger structures
     return test_atoms

@@ -2,12 +2,13 @@ from jobflow import job, Response, Flow, Maker
 from typing import List, Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 from pyace import PyACECalculator
-from aceflow.utils.structure_sampler import generate_test_points
-from aceflow.core.active_learning import psuedo_equilibrate_and_test, select_structures_with_active_set
+from aceflow.utils.structure_sampler import get_random_packed_points
+from aceflow.active_learning.active_learning import run_NVT_MD, select_structures_with_active_set
 from aceflow.utils.config import ActiveLearningConfig
 from aceflow.utils.cleaner import dataframe_to_ace_dict
 from aceflow.core.model import TrainedPotential
 from aceflow.schemas.core import ACEDataTaskDoc
+from aceflow.active_learning.base import BaseActiveLearningStrategy
 from pymatgen.core.structure import Structure
 import pandas as pd
 import os
@@ -113,7 +114,7 @@ def deferred_static_from_list(maker, structures : List[Union[dict, Structure, MS
     return Response(replace=flow)
 
 @job(acedata='acedata', output_schema=ACEDataTaskDoc)
-def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential, str], compositions: list, active_learning_config: ActiveLearningConfig):
+def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential, str], compositions: list, sampling_strategy: BaseActiveLearningStrategy = None):
 
     if isinstance(trained_potential, TrainedPotential):
         prev_dir = trained_potential.train_dir
@@ -126,17 +127,13 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
     else:
         potential_file = prev_dir + '/interim_potential_0.yaml'
     active_set = potential_file.replace(".yaml", ".asi")
-    base_calculator = PyACECalculator(potential_file)
-    base_calculator.set_active_set(active_set)
-    active_structures = []
-    chemsys = [element.decode('utf-8') for element in list(base_calculator.elements_mapper_dict.keys())]
-    test_points = generate_test_points(compositions, chemsys, iterations=1, sampling_frequency=active_learning_config.sampling_frequency, max_points=active_learning_config.max_points)
-    print(len(test_points))
-    for point in test_points:
-        atoms, gamma = psuedo_equilibrate_and_test(base_calculator, point)
-        if gamma > active_learning_config.gamma_max and gamma < 1000:
-            active_structures.append(atoms)
-    print(len(active_structures))
+
+    sampler = sampling_strategy
+    sampler.base_calculator = PyACECalculator(potential_file)
+    sampler.base_calculator.set_active_set(active_set)
+
+    active_structures = sampler.sample_structures(compositions)
+
     df = pd.DataFrame({'ase_atoms': active_structures})
     df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=active_learning_config.max_structures)
 

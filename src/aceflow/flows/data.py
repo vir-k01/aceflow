@@ -11,7 +11,10 @@ from dataclasses import dataclass, field
 from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs
 from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
 from aceflow.core.model import TrainedPotential
+from aceflow.active_learning.core import RandomPackedSampler, HighTempMDSampler
+from aceflow.active_learning.base import BaseActiveLearningStrategy
 from pymatgen.io.ase import AseAtomsAdaptor
+from typing import List
 
 @dataclass
 class DataGenFlowMaker(Maker):
@@ -98,8 +101,25 @@ class ActiveStructuresFlowMaker(Maker):
   
     def make(self, compositions: list, trained_potential: TrainedPotential):
 
-        active_structures = test_potential_in_restricted_space(trained_potential, compositions, active_learning_config=self.active_learning_config)
-        structures = active_structures.output.acedata
+        if self.active_learning_config.sampling_strategy is None:
+            self.active_learning_config.sampling_strategy = RandomPackedSampler()
+        
+        if self.active_learning_config.sampling_strategy.gamma_high is None:
+            self.active_learning_config.sampling_strategy.gamma_high = self.active_learning_config.gamma_high
+        
+        if self.active_learning_config.sampling_strategy.gamma_low is None:
+            self.active_learning_config.sampling_strategy.gamma_low = self.active_learning_config.gamma_low
+        
+        structures = []
+
+        if isinstance(self.active_learning_config.sampling_strategy, BaseActiveLearningStrategy):
+            self.active_learning_config.sampling_strategy = [self.active_learning_config.sampling_strategy]
+        
+        if isinstance(self.active_learning_config.sampling_strategy, List):
+            for strategy in self.active_learning_config.sampling_strategy:
+                active_structures = test_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
+                structures.extend(active_structures.output.acedata)
+        
         if self.static_maker is None:
             self.static_maker = StaticMaker()
             #self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)

@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from monty.json import MSONable
-from typing import Union, Dict
+from typing import Union, Dict, List
 from aceflow.reference_objects.BBasis_classes import *
+from aceflow.active_learning.base import BaseActiveLearningStrategy
 
 
 
@@ -35,11 +36,11 @@ class TrainConfig(MSONable):
 @dataclass
 class ActiveLearningConfig(MSONable):
     active_learning_loops : int = 1 # Number of active learning loops to run. Default is 1, increase if you want to run multiple loops of active learning.
-    sampling_mathod : str = 'compositional' # 'compositional' or 'structural' or 'all' 
+    sampling_strategy : Union[List[BaseActiveLearningStrategy], BaseActiveLearningStrategy]= None # Active learning strategy to use. Default is RandomPackedActiveLearning, which selects random packed structures for the active set.
     max_points : int = 500 # Maximum number of points to test the potential at in each loop. Default is 500, increase if you want to select more points in each loop. 
     max_structures : int = 500 # Maximum number of structures to add to the active set in each loop. These many DFT statics will be performed. To use every strucure selected by pace_select, set to -1. 
-    gamma_max : int = 5 # Cutoff for extrapolation grade. Default is 5, decrease if you to consider more points for the active set.
-    sampling_frequency : int = 5 # Frequency of sampling points for the active learning. Default is 5, increase if you want to sample more points for the active learning.
+    gamma_high : int = 100 # Cutoff for extrapolation grade. Default is 1000, anything over this value is discarded from the active set.
+    gamma_low : int = 5 # Cutoff for extrapolation grade. Default is 5, decrease if you want to consider more points for the active set.
 
 
 @dataclass
