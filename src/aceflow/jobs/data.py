@@ -120,9 +120,12 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
 
     prev_dir = None
     if isinstance(trained_potential, TrainedPotential):
-        prev_dir = trained_potential.train_dir
+        TrainedPotential().dump_potential(trained_potential.output_potential, 'output_potential.yaml')
+        active_set = trained_potential.active_set_file
     if isinstance(trained_potential, dict):
-        prev_dir = trained_potential['train_dir']
+        TrainedPotential().dump_potential(trained_potential['output_potential'], 'output_potential.yaml')
+        active_set = trained_potential['active_set_file']
+    
     if isinstance(trained_potential, str):
         potential_file = trained_potential
         if active_set_file is not None:
