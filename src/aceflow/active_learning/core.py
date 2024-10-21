@@ -1,7 +1,7 @@
 from aceflow.active_learning.base import BaseActiveLearningStrategy
 from dataclasses import dataclass, field
 from aceflow.utils.structure_sampler import get_random_packed_points
-from atomate2.common.jobs.structure_gen import get_random_packed
+from atomate2.common.jobs.mpmorph import get_random_packed_structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from mp_api.client import MPRester
 from aceflow.active_learning.active_learning import run_NVT_MD
@@ -36,7 +36,7 @@ class HighTempMDSampler(BaseActiveLearningStrategy):
 
     def sample_structures(self, compositions):
 
-        structures = [get_random_packed(composition, vol_exp=1.2, target_atoms=self.target_atoms) for composition in compositions]
+        structures = [get_random_packed_structure(composition, vol_exp=1.2, target_atoms=self.target_atoms) for composition in compositions]
         with MPRester() as mpr:
             entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, 1)})
         structures.extend([entry.structure.make_supercell(2, 2, 2) if len(entry.structure) < 50 else entry.structure for entry in entries])
@@ -70,7 +70,7 @@ class ActiveExplorationSampler(BaseActiveLearningStrategy):
         bconf = BBasisConfiguration(self.bconf_file)
         ae = ActiveExploration(bconf, self.asi_file)
 
-        structures = [get_random_packed(composition, vol_exp=1.2, target_atoms=self.target_atoms) for composition in compositions]
+        structures = [get_random_packed_structure(composition, vol_exp=1.2, target_atoms=self.target_atoms) for composition in compositions]
         with MPRester() as mpr:
             entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, 1)})
         structures.extend([entry.structure.make_supercell(2, 2, 2) if len(entry.structure) < 50 else entry.structure for entry in entries])

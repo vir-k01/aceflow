@@ -1,6 +1,6 @@
 import numpy as np
 from pymatgen.core import Composition
-from atomate2.common.jobs.structure_gen import get_random_packed
+from atomate2.common.jobs.mpmorph import get_random_packed_structure
 from pymatgen.io.ase import AseAtomsAdaptor
 import re
 
@@ -83,7 +83,7 @@ def get_random_packed_points(compositions : list, chemsys : list, iterations : i
     test_compositions = [composition for sublist in test_points for composition in sublist]
     test_compositions = list(set(test_compositions))
 
-    test_structures = [get_random_packed(composition, vol_exp=1.2, target_atoms=target_atoms) for composition in test_compositions for i in range(5)]
+    test_structures = [get_random_packed_structure(composition, vol_multiply=1.2, target_atoms=target_atoms) for composition in test_compositions for i in range(5)]
 
     test_structures_with_oxi = []
     test_atoms = []

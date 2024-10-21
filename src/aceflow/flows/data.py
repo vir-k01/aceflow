@@ -2,7 +2,7 @@ import numpy as np
 from jobflow import Flow, Maker, OnMissing
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
-from atomate2.common.jobs.structure_gen import get_random_packed
+from atomate2.common.jobs.mpmorph import get_random_packed_structure
 from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
@@ -13,8 +13,9 @@ from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
 from aceflow.core.model import TrainedPotential
 from aceflow.active_learning.core import RandomPackedSampler, HighTempMDSampler
 from aceflow.active_learning.base import BaseActiveLearningStrategy
+from pymatgen.core import Composition
 from pymatgen.io.ase import AseAtomsAdaptor
-from typing import List
+from typing import List, Union
 
 @dataclass
 class DataGenFlowMaker(Maker):
@@ -34,7 +35,7 @@ class DataGenFlowMaker(Maker):
 
             working_structures = [entry.structure.make_supercell(int((150//len(entry.structure))**0.33),int((150//len(entry.structure))**0.33), int((150//len(entry.structure))**0.33)) if len(entry.structure) < 100 else entry.structure for entry in entries]
             for composition in compositions:
-                working_structures.append(get_random_packed(composition, vol_exp=1.2))
+                working_structures.append(get_random_packed_structure(composition, vol_multiply=1.2))
         if self.md_maker is None:
             '''self.md_maker = PyACEMDMaker(**{"time_step": 2,
                             "n_steps": self.data_gen_config.md_steps,
@@ -99,12 +100,11 @@ class ActiveStructuresFlowMaker(Maker):
     data_gen_config : DataGenConfig = None
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
-    def make(self, compositions: list, trained_potential: TrainedPotential):
-
+    def make(self, compositions: list[Union[str, Composition]], trained_potential: TrainedPotential):
+        
         if self.active_learning_config.sampling_strategy is None:
             self.active_learning_config.sampling_strategy = RandomPackedSampler()
     
-        
         if self.active_learning_config.sampling_strategy.gamma_high is None:
             self.active_learning_config.sampling_strategy.gamma_high = self.active_learning_config.gamma_high
         
