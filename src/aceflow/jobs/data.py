@@ -20,13 +20,14 @@ def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
     structures = []
     if md_outputs:
         for md_output in md_outputs:
-            trajectory = md_output.vasp_objects['trajectory']
-            #trajectory = md_output.forcefield_objects['trajectory']
-            for frame_id in range(0, len(trajectory.frame_properties), step_skip):
-                energies.append(trajectory.frame_properties[frame_id]['energy'])
-                forces.append(trajectory.frame_properties[frame_id]['forces'])
-                structures.append(trajectory.get_structure(frame_id))
-   
+            if md_output:
+                trajectory = md_output.vasp_objects['trajectory']
+                #trajectory = md_output.forcefield_objects['trajectory']
+                for frame_id in range(0, len(trajectory.frame_properties), step_skip):
+                    energies.append(trajectory.frame_properties[frame_id]['energy'])
+                    forces.append(trajectory.frame_properties[frame_id]['forces'])
+                    structures.append(trajectory.get_structure(frame_id))
+    
     data = {
             'energy': energies,
             'forces': forces,

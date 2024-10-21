@@ -32,7 +32,7 @@ class DataGenFlowMaker(Maker):
             with MPRester() as mpr:
                 entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, self.data_gen_config.max_energy_above_hull)})
 
-            working_structures = [entry.structure.make_supercell(2, 2, 2) if len(entry.structure) < 50 else entry.structure for entry in entries]
+            working_structures = [entry.structure.make_supercell(int((150//len(entry.structure))**0.33),int((150//len(entry.structure))**0.33), int((150//len(entry.structure))**0.33)) if len(entry.structure) < 100 else entry.structure for entry in entries]
             for composition in compositions:
                 working_structures.append(get_random_packed(composition, vol_exp=1.2))
         if self.md_maker is None:
