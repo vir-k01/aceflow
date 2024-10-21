@@ -30,7 +30,7 @@ def write_input(trainer_config : TrainConfig, reference_energy_dict: dict = None
         ladder_step = [str(step) for step in ladder_step]
 
     if reference_energy_dict is None:
-        reference_energy_dict = {'Ba': -0.13385613, 'Ti': -1.21095265, 'O': -0.05486302, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611}
+        reference_energy_dict = {'Ba': -0.13385613, 'Ti': -1.21095265, 'O': -0.05486302, 'Zr': -1.31795132, 'Cl': -0.04836128, 'N': -0.05012608, 'Ca': -0.06538611, 'Li': -0.04367102, 'Al': -0.02012669, 'Y': -1.96075795}
     
     content = f"""
   cutoff: {cutoff} # cutoff for neighbour list construction
