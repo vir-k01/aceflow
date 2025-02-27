@@ -6,9 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "aceflow"
 version = "0.0.1"
 dependencies = [
-  "pymatgen==2024.3.1",
+  "pymatgen",
   "pandas",
   "jobflow",
+  "fireworks",
+  "mp_api"
 ]
 requires-python = ">=3.8"
 authors = [

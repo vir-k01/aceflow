@@ -3,7 +3,6 @@ from jobflow import Flow, Maker, OnMissing
 from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.mpmorph import get_random_packed_structure
-from atomate2.forcefields.md import PyACEMDMaker
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoints_settings
@@ -97,27 +96,22 @@ class DataGenFlowMaker(Maker):
 class ActiveStructuresFlowMaker(Maker):
     name = "Active Structures Flow"
     static_maker : Maker = None
-    data_gen_config : DataGenConfig = None
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
     def make(self, compositions: list[Union[str, Composition]], trained_potential: TrainedPotential):
         
-        if self.active_learning_config.sampling_strategy is None:
+        if not self.active_learning_config.sampling_strategy:
             self.active_learning_config.sampling_strategy = RandomPackedSampler()
-    
-        if self.active_learning_config.sampling_strategy.gamma_high is None:
-            self.active_learning_config.sampling_strategy.gamma_high = self.active_learning_config.gamma_high
-        
-        if self.active_learning_config.sampling_strategy.gamma_low is None:
-            self.active_learning_config.sampling_strategy.gamma_low = self.active_learning_config.gamma_low
-        
-        structures = []
-
+            
         if isinstance(self.active_learning_config.sampling_strategy, BaseActiveLearningStrategy):
             self.active_learning_config.sampling_strategy = [self.active_learning_config.sampling_strategy]
+    
+        structures = []
         
         if isinstance(self.active_learning_config.sampling_strategy, List):
             for strategy in self.active_learning_config.sampling_strategy:
+                strategy.gamma_low = self.active_learning_config.gamma_low
+                strategy.gamma_high = self.active_learning_config.gamma_high
                 active_structures = test_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
                 structures.append(active_structures.output.acedata)
         
