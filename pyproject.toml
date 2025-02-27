@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "aceflow"
 version = "0.0.1"
 dependencies = [
+  "tensorflow",
+  "atomate2",
   "pymatgen",
-  "pandas",
-  "jobflow",
   "fireworks",
   "mp_api"
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
   {name = "Vir Karan", email = "virkaran@berkeley.edu"},
 ]
