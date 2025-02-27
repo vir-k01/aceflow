@@ -4,6 +4,7 @@ from mp_api.client import MPRester
 from atomate2.common.jobs.eos import _apply_strain_to_structure
 from atomate2.common.jobs.mpmorph import get_random_packed_structure
 from atomate2.vasp.jobs.md import MDMaker
+from atomate2.vasp.sets.core import MDSetGenerator
 from atomate2.vasp.jobs.core import StaticMaker
 from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoints_settings
 from dataclasses import dataclass, field
@@ -44,9 +45,10 @@ class DataGenFlowMaker(Maker):
                             "traj_file_fmt": "pmg",
                             "traj_interval": 1
         })'''
-            self.md_maker = MDMaker(temperature=self.data_gen_config.temperature, end_temp=self.data_gen_config.temperature, steps=self.data_gen_config.md_steps)
-            self.maker = update_user_incar_settings(self.maker, self.data_gen_config.incar_updates)
-            self.maker = update_user_kpoints_settings(self.maker, self.data_gen_config.kpoints)
+            md_set = MDSetGenerator(start_temp=self.data_gen_config.temperature, end_temp=self.data_gen_config.temperature, time_step=2, nsteps=self.data_gen_config.md_steps)
+            self.md_maker = MDMaker(input_set_generator=md_set)
+            self.md_maker = update_user_incar_settings(self.md_maker, self.data_gen_config.incar_updates)
+            self.md_maker = update_user_kpoints_settings(self.md_maker, self.data_gen_config.kpoints)
         
         if self.static_maker is None:
             self.static_maker = StaticMaker()
