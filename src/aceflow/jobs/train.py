@@ -1,10 +1,10 @@
 from jobflow import job, Flow, Response
 import pandas as pd
 import subprocess
-from aceflow.utils.input_writer import write_input, flexible_input_writer
+from aceflow.utils.input_writer import write_input, flexible_input_writer, write_grace_input
 from aceflow.schemas.core import ACETrainerTaskDoc
-from aceflow.utils.config import TrainConfig, HeirarchicalFitConfig
-from aceflow.core.model import TrainedPotential
+from aceflow.utils.config import TrainConfig, HeirarchicalFitConfig, GraceConfig
+from aceflow.core.model import TrainedPotential, GraceModel
 import os
 from typing import Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
@@ -53,27 +53,39 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
     return os.getcwd()
 
 @job(output_schema=ACETrainerTaskDoc)
-def check_training_output(prev_run_dir: str, trainer_config: TrainConfig = None) -> TrainedPotential:
-    trained_potential = TrainedPotential(train_dir = prev_run_dir, trainer_config = trainer_config)
-    trained_potential.read_training_dir()
+def check_training_output(prev_run_dir: str, 
+                          trainer_config: TrainConfig | GraceConfig = None) -> TrainedPotential | GraceModel:
+    
+    if isinstance(trainer_config, TrainConfig):
+        trained_potential = TrainedPotential.from_dir(prev_run_dir)
+    else:
+        trained_potential = GraceModel.from_dir(prev_run_dir)
 
     if trained_potential.status == 'incomplete':
         if trainer_config.restart_failed_runs:
             trainer_config.max_steps = trainer_config.max_steps // 2
-            return Response(addition=naive_train_ACE(computed_data_set=prev_run_dir, trainer_config=trainer_config, trained_potential=trained_potential))
+            if isinstance(trainer_config, TrainConfig):
+                return Response(addition=naive_train_ACE(computed_data_set=prev_run_dir, 
+                                                         trainer_config=trainer_config, 
+                                                         trained_potential=trained_potential))
+            else:
+                return Response(addition=naive_train_grace(computed_data_set=prev_run_dir, 
+                                                           trainer_config=trainer_config, 
+                                                           trained_potential=trained_potential))
 
     #dataset = pd.read_pickle(prev_run_dir + '/data.pckl.gzip', compression='gzip')
-    with open(prev_run_dir + '/log.txt') as f:
+    
+    with open(os.path.join(trained_potential.train_dir, 'log.txt')) as f:
         log = f.readlines()
+    
     doc_data = {'log_file': log,
-                'trainer_config': trainer_config,
+                'trainer_config': trained_potential.trainer_config,
                 'trained_potential': trained_potential,
-                'train_dir': prev_run_dir}
+                'train_dir': trained_potential.train_dir}
 
     doc = ACETrainerTaskDoc(**doc_data)
     doc.task_label = trainer_config.name
     return doc
-
 
 @job
 def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, trainer_config: TrainConfig = None, trained_potential: TrainedPotential = None, initial_potentials: dict = None) -> str:
@@ -115,4 +127,43 @@ def naive_train_hACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
     else:
         subprocess.run("pacemaker input.yaml", shell=True)
     
+    return os.getcwd()
+
+@job
+def naive_train_grace(computed_data_set : Union[dict, pd.DataFrame, str] = None, 
+                      trainer_config: GraceConfig = None, 
+                      trained_potential: GraceModel = None, 
+                      ) -> str:
+    
+    if isinstance(computed_data_set, dict):
+        if computed_data_set.get('ase_atoms') is None:
+            raise ValueError("Computed data set must contain ase_atoms column.")
+        computed_data_set = pd.DataFrame.from_dict(computed_data_set)
+
+    if isinstance(computed_data_set, str):
+        try:
+            computed_data_set = pd.read_pickle(computed_data_set, compression='gzip')
+        except:
+            raise FileNotFoundError("No data found in the provided directory.")
+    
+    if isinstance(computed_data_set, pd.DataFrame):
+        if isinstance(computed_data_set['ase_atoms'][0], MSONAtoms):
+            processed_atoms = [AseAtomsAdaptor().get_atoms(AseAtomsAdaptor().get_structure(atoms), msonable=False) for atoms in computed_data_set['ase_atoms']]
+            computed_data_set.drop(columns=['ase_atoms'], inplace=True)
+            computed_data_set['ase_atoms'] = processed_atoms
+        if computed_data_set.get('stress') is not None:
+            trainer_config.stress_control = ''
+        computed_data_set.to_pickle("data.pckl.gzip", compression='gzip', protocol=4)
+    
+    write_grace_input(trainer_config)
+    run_cmd = "gracemaker"
+    
+    if trained_potential:
+        if isinstance(trained_potential, dict):
+            trained_potential = GraceModel.from_dict(trained_potential)
+        
+        run_cmd += f" -r -p {trained_potential.model_yaml} -cn {trained_potential.model_checkpoint}"
+    process = subprocess.run(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if process.returncode != 0:
+        raise RuntimeError(f"Error running gracemaker: {process.stderr.decode('utf-8')}")
     return os.getcwd()

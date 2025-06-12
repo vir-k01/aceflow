@@ -2,11 +2,12 @@ from jobflow import job, Response, Flow, Maker
 from typing import List, Union
 from pymatgen.io.ase import AseAtomsAdaptor, MSONAtoms
 from pyace import PyACECalculator
+from pyace.asecalc import PyGRACEFSCalculator
 from aceflow.utils.structure_sampler import get_random_packed_points
 from aceflow.active_learning.active_learning import run_NVT_MD, select_structures_with_active_set
 from aceflow.utils.config import ActiveLearningConfig
 from aceflow.utils.cleaner import dataframe_to_ace_dict
-from aceflow.core.model import TrainedPotential
+from aceflow.core.model import TrainedPotential, GraceModel
 from aceflow.schemas.core import ACEDataTaskDoc
 from aceflow.active_learning.base import BaseActiveLearningStrategy
 from pymatgen.core.structure import Structure
@@ -150,6 +151,33 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
 
     sampler = sampling_strategy
     sampler.base_calculator = PyACECalculator(potential_file)
+    sampler.base_calculator.set_active_set(active_set)
+
+    active_structures = sampler.sample_structures(compositions)
+    print(len(active_structures))
+    df = pd.DataFrame({'ase_atoms': active_structures})
+    df_selected = select_structures_with_active_set(potential_file, active_set, df, max_structures=sampler.max_structures)
+
+    data = {'ase_atoms': list(df_selected['ase_atoms'])}#[AseAtomsAdaptor().get_structure(structure) for structure in df_selected['ase_atoms']]}
+    doc = ACEDataTaskDoc(**{'acedata': data})
+    doc.task_label = 'Active Structures Generation'
+    return doc
+
+@job(acedata='acedata', output_schema=ACEDataTaskDoc)
+def test_grace_potential_in_restricted_space(trained_potential: Union[GraceModel, str], compositions: list, sampling_strategy: BaseActiveLearningStrategy = None, active_set_file: str = None):
+    
+    if isinstance(trained_potential, GraceModel):
+        potential_file = trained_potential.model_yaml
+        active_set = trained_potential.active_set_file
+    if isinstance(trained_potential, str):
+        potential_file = trained_potential
+        if not active_set_file:
+            active_set = potential_file.replace(".yaml", ".asi")
+        else:
+            active_set = active_set_file
+    
+    sampler = sampling_strategy
+    sampler.base_calculator = PyGRACEFSCalculator(potential_file)
     sampler.base_calculator.set_active_set(active_set)
 
     active_structures = sampler.sample_structures(compositions)

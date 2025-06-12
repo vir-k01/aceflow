@@ -1,0 +1,75 @@
+seed: 42
+cutoff: $cutoff
+
+# cutoff_dict: {Mo: 4, MoNb: 3, W: 5, Ta*: 7 } ## Defining cutoff for each bond type separately, used by certain models
+## possible defaults: DEFAULT_CUTOFF_1L, DEFAULT_CUTOFF_2L
+
+######################
+##       DATA       ##
+######################
+data:
+  filename: "data.pckl.gzip"
+  test_size: $test_size
+  reference_energy: $reference_energy
+
+######################
+##    POTENTIAL     ##
+######################
+potential:
+  elements: $elements # If not provided - determined automatically from data
+
+
+  ## Option 1. Presets
+  $preset_control preset: $preset # FS, GRACE_1LAYER, GRACE_2LAYER
+  $kwargs_control kwargs: $kwargs  # kw-arguments that will be passed to preset or custom model
+  $custom_control custom: $custom # custom model from model.py file, function custom_model
+  $filename_control filename: $filename # filename of the model
+  $checkpoint_name_control checkpoint_name: $checkpoint_name # path to checkpoint index file
+
+  ## Other parameters: 
+  # shift: False # True/False - automatic shift by energy
+  # scale: False # False/True or float  - automatic scale data by force RMSE
+  # avg_n_neigh: 40 # Average number of neighbours. By default - automatically determined
+  #  float_dtype: float64 # float64, float32
+  #  custom ZBL core repulsion for model:  kwargs: {zbl_cutoff: {Mo: 1, MoNb: 2, W: 1, Ta*: 3 }}
+
+######################
+##       FIT        ##
+######################
+fit:
+  loss: {
+    energy: { type: huber, weight: $energy_weight,  delta: 0.1  }, # or { type: square, weight: 1} 
+    forces: { type: huber, weight: $forces_weight, delta: 0.01 }, 
+    $stress_control stress: { type: huber, weight: $stress_weight, delta: 0.01},   #
+  }
+
+  maxiter: $max_steps # Max number of iterations
+
+  ## Optimization with Adam: good for large number of parameters, first-order method
+  optimizer: $optimizer
+  opt_params: $opt_params
+  # reset_optimizer: True  # reset optimizer, after being loaded from checkpoint
+  # for learning-rate reduction
+  learning_rate_reduction: { patience: $patience, factor: $factor, min: $min, stop_at_min: $stop_at_min, resume_lr: $resume_lr, } 
+
+  ## Optimization with BFGS: good for SMALL number of parameters (up to 10k), "second"-order method.
+  ## scipy optimizer on CPU will be used
+  #  optimizer: L-BFGS-B # 'L-BFGS-B' for memory limited or 'BFGS' for full method
+  #  opt_params: {maxcor: 100, maxls: 20 }  # options for L-BFGS-B
+
+
+  batch_size: $batch_size # Important hyperparameter for Adam and irrelevant (but must be) for L-BFGS-B/BFGS
+  test_batch_size: $test_batch_size # test batch size (optional)
+
+  compute_convex_hull: $compute_convex_hull ## for train+test dataset compute convex hull and distance to it 
+  eval_init_stats: $eval_init_stats  ## Compute train/test metrics before start fitting 
+
+  jit_compile: $jit_compile  # for XLA compilation, must be used in almost all cases
+  train_max_n_buckets: $train_max_n_buckets  ## max number of buckets in train set  
+  test_max_n_buckets: $test_max_n_buckets  ## same for test
+
+  checkpoint_freq: $checkpoint_freq # frequency for **REGULAR** checkpoints. 
+  save_all_regular_checkpoints: $save_all_regular_checkpoints # to store ALL regular checkpoints
+  progressbar: $progressbar # show batch-evaluation progress bar
+  train_shuffle: $train_shuffle # shuffle train batches on every epoch
+  strategy: $strategy # or -m flag # for parallel multi-GPU parameterization

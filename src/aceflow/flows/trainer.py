@@ -3,11 +3,11 @@ from jobflow import Maker, Flow
 from atomate2.vasp.jobs.md import MDMaker
 from atomate2.vasp.jobs.core import StaticMaker
 from aceflow.flows.data import DataGenFlowMaker, ActiveStructuresFlowMaker
-from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig, HeirarchicalFitConfig
+from aceflow.utils.config import TrainConfig, DataGenConfig, ActiveLearningConfig, HeirarchicalFitConfig, GraceConfig
 from aceflow.reference_objects.BBasis_classes import *
-from aceflow.core.model import TrainedPotential
+from aceflow.core.model import TrainedPotential, GraceModel
 from aceflow.jobs.data import consolidate_data
-from aceflow.jobs.train import naive_train_ACE, check_training_output, naive_train_hACE
+from aceflow.jobs.train import naive_train_ACE, naive_train_grace, check_training_output, naive_train_hACE
 import pandas as pd
 import os
 import numpy as np
@@ -17,44 +17,56 @@ from typing import Union, Dict
 @dataclass
 class ACEMaker(Maker):
     name : str = 'ACE Maker'
-    trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
+    trainer_config : TrainConfig | GraceConfig = field(default_factory=lambda: TrainConfig())
     loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
 
-    def make(self, data: Union[pd.DataFrame, str], pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
+    def make(self, 
+             data: Union[pd.DataFrame, str], 
+             pretrained_potential: Union[str, TrainedPotential, GraceModel] = None) -> Flow:
+        
         trainers = []
         train_checkers = []
         job_list = []
         trained_potential = None
 
-        if self.trainer_config.chemsys is None:
-            raise ValueError("Chemical system must be provided in the trainer config.")
-        
-        '''if not isinstance(data, str):
-            try:
-                data_path = os.getcwd() + '/data.pckl.gzip'
-                pd.to_pickle(data, data_path, compression='gzip', protocol=4)
-                data = data_path
-            except:
-                raise ValueError("Due to JobStore issues, data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")'''
+        if isinstance(self.trainer_config, TrainConfig):
+            if self.trainer_config.chemsys is None:
+                raise ValueError("Chemical system must be provided in the trainer config.")
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
-                trained_potential = TrainedPotential()
-                trained_potential.read_potential(pretrained_potential)
-                if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
-                    trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
+                if isinstance(self.trainer_config, TrainConfig):
+                    trained_potential = TrainedPotential.from_dir(pretrained_potential)
+                else:
+                    trained_potential = GraceModel.from_dir(pretrained_potential)
 
-            if isinstance(pretrained_potential, TrainedPotential):
+            if isinstance(pretrained_potential, TrainedPotential | GraceModel):
                 trained_potential = pretrained_potential
             else:
-                raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")
+                raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
+
         
         for i, loss in enumerate(self.loss_weights):
-            self.trainer_config.loss_weight = loss
+            if isinstance(self.trainer_config, TrainConfig):
+                self.trainer_config.loss_weight = loss
+            else:
+                self.trainer_config.energy_weight = 1-loss
+                self.trainer_config.forces_weight = loss
+                self.trainer_config.stress_weight = 1-loss
+
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
             self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}"
-            trainers.append(naive_train_ACE(data, trainer_config=self.trainer_config, trained_potential=trained_potential))
+            if isinstance(self.trainer_config, TrainConfig):
+                trainers.append(naive_train_ACE(data, 
+                                                trainer_config=self.trainer_config, 
+                                                trained_potential=trained_potential))
+            else:
+                trainers.append(naive_train_grace(data, 
+                                                  trainer_config=self.trainer_config, 
+                                                  trained_potential=trained_potential,
+                                                  ))
+            print(trainers[-1])
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"
@@ -93,7 +105,7 @@ class ProductionACEMaker(Maker):
 
     '''
     name : str = 'Production ACE Maker'
-    trainer_config : TrainConfig = field(default_factory=lambda: TrainConfig())
+    trainer_config : TrainConfig | GraceConfig = field(default_factory=lambda: TrainConfig())
     data_gen_config : DataGenConfig = field(default_factory=lambda: DataGenConfig())
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
@@ -129,30 +141,46 @@ class ProductionACEMaker(Maker):
                 raise ValueError("Due to JobStore issues, precomputed data must be a path to a pickled dataframe in .pckl.gzip format OR an instance of a pd.DataFrame which is pickled in this call.")
     '''
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
+        data = consolidate_data_jobs[-1].output.acedata
 
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
-                trained_potential = TrainedPotential()
-                trained_potential.read_potential(pretrained_potential)
-                if os.path.isfile(pretrained_potential.replace(".yaml", ".asi")):
-                    trained_potential.active_set_file = pretrained_potential.replace(".yaml", ".asi")
+                if isinstance(self.trainer_config, TrainConfig):
+                    trained_potential = TrainedPotential.from_dir(pretrained_potential)
+                else:
+                    trained_potential = GraceModel.from_dir(pretrained_potential)
 
-            if isinstance(pretrained_potential, TrainedPotential):
+            if isinstance(pretrained_potential, TrainedPotential | GraceModel):
                 trained_potential = pretrained_potential
             else:
-                raise ValueError("Pretrained potential must be a path to a yaml file or an instance of the TrainedPotential class.")
-        
+                raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.") 
 
         for i, loss in enumerate(self.loss_weights):
-            self.trainer_config.loss_weight = loss
+            if isinstance(self.trainer_config, TrainConfig):
+                self.trainer_config.loss_weight = loss
+            else:
+                self.trainer_config.energy_weight = 1-loss
+                self.trainer_config.forces_weight = loss
+                self.trainer_config.stress_weight = 1-loss
+
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
             self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}"
-            trainers.append(naive_train_ACE(consolidate_data_jobs[-1].output.acedata, trainer_config=self.trainer_config, trained_potential=trained_potential))
+            if isinstance(self.trainer_config, TrainConfig):
+                trainers.append(naive_train_ACE(data, 
+                                                trainer_config=self.trainer_config, 
+                                                trained_potential=trained_potential))
+            else:
+                trainers.append(naive_train_grace(data, 
+                                                  trainer_config=self.trainer_config, 
+                                                  trained_potential=trained_potential,
+                                                  ))
+            print(trainers[-1])
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"
+
 
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
@@ -164,7 +192,10 @@ class ProductionACEMaker(Maker):
                     self.trainer_config.loss_weight = loss
                     trained_potential = train_checkers[-1].output.trained_potential
                     self.trainer_config.name = f"Active Step {i}.{j} Trainer, Loss Weight: {self.loss_weights[j]}"
-                    trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, trained_potential=trained_potential))
+                    if isinstance(self.trainer_config, TrainConfig):
+                        trainers.append(naive_train_ACE(computed_data_set=consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, trained_potential=trained_potential))
+                    else:
+                        trainers.append(naive_train_grace(computed_data_set=consolidate_data_jobs[-1].output, trainer_config=self.trainer_config, trained_potential=trained_potential))
                     trainers[-1].name = self.trainer_config.name
                     train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
                     train_checkers[-1].name = self.trainer_config.name + " Checker"

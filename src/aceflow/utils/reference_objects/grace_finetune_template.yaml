@@ -1,0 +1,45 @@
+seed: 1
+cutoff: $cutoff
+
+data:
+  filename: data.pckl.gzip
+  test_size: $test_size
+  reference_energy: $reference_energy
+  # stress_units: eV/A3 # eV/A3 (default) or GPa or kbar or -kbar
+
+
+potential:
+   # If elements not provided - determined automatically from data
+  finetune_foundation_model: $finetune_foundation_model # LINEAR, FS, GRACE_1LAYER, GRACE_2LAYER
+  reduce_elements: $reduce_elements #  default - False, reduce elements to those provided in dataset 
+        
+fit:
+  loss: {
+    energy: { weight: $energy_weight, type: huber , delta: 0.01 },
+    forces: { weight: $forces_weight, type: huber , delta: 0.01 },
+    $stress_control stress: { weight: $stress_weight, type: huber , delta: 0.01 },
+  }
+
+  maxiter: $max_steps # Number of epochs / iterations
+
+  optimizer: $optimizer
+  opt_params: $opt_params
+
+  # for learning-rate reduction
+  learning_rate_reduction: { patience: $patience, factor: $factor, min: $min, stop_at_min: $stop_at_min, resume_lr: $resume_lr, }
+
+  ## needed for low-energy tier metrics and for "convex_hull"-based distance of energy-based weighting scheme
+  compute_convex_hull: $compute_convex_hull
+  batch_size: $batch_size # Important hyperparameter for Adam and irrelevant (but must be) for L-BFGS-B
+  test_batch_size: $test_batch_size # test batch size (optional)
+
+  jit_compile: $jit_compile
+  eval_init_stats: $eval_init_stats # to evaluate initial metrics
+
+  train_max_n_buckets: $train_max_n_buckets # max number of buckets (group of batches of same shape) in train set
+  test_max_n_buckets: $test_max_n_buckets # same for test
+
+  checkpoint_freq: $checkpoint_freq # frequency for **REGULAR** checkpoints.
+  save_all_regular_checkpoints: $save_all_regular_checkpoints # to store ALL regular checkpoints
+  progressbar: $progressbar # show batch-evaluation progress bar
+  train_shuffle: $train_shuffle # shuffle train batches on every epoch

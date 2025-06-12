@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from monty.json import MSONable
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Literal
 from aceflow.reference_objects.BBasis_classes import *
 from aceflow.active_learning.base import BaseActiveLearningStrategy
 
@@ -63,3 +63,48 @@ class DataGenConfig(MSONable):
                             "KPAR": 1, # Parallelization over K-points, use 1 since gamma-point only calculations are used
                             "NCORE": 8 # Number of cores to parralelize for the calculation. Default is 8, increase if you have more cores available. In this case, make sure NCORE is a divisor of the number of cores available.
                         })
+    
+
+@dataclass
+class GraceConfig(MSONable):
+    cutoff : int | str = 'n/a'
+    test_size : float = 0.05
+    reference_energy : dict = None
+    finetune_foundation_model : str = None
+    preset : Literal['FS', 'GRACE_1LAYER', 'GRACE_2LAYER', 'custom'] = 'FS'
+    preset_kwargs : dict = None
+    reduce_elements : bool = True
+    energy_weight : float = 1
+    forces_weight : float = 5
+    stress_control : str = '#'
+    stress_weight : float = 0.1
+    max_steps : int = 750
+    optimizer : str = 'Adam'
+    opt_params : dict = field(default_factory=lambda:{
+            'learning_rate': 0.001,
+            'amsgrad': True,
+            'use_ema': True,
+            'ema_momentum': 0.99,
+            'weight_decay': 'null',
+        })
+    patience : int = 5
+    factor : float = 0.98
+    min : float = 5.0e-4
+    stop_at_min : bool = True
+    resume_lr : bool = True
+    compute_convex_hull : bool = False
+    batch_size : int = 32
+    test_batch_size : int = 128
+    checkpoint_freq : int = 2
+    progressbar : bool = True
+    save_all_regular_checkpoints : bool = False
+    train_shuffle : bool = True
+    strategy : str = 'mirrored'
+    jit_compile : bool = True
+    eval_init_stats : bool = True
+    train_max_n_buckets : int = 10
+    test_max_n_buckets : int = 5
+    filename : str = None
+    checkpoint_name : str = None
+    custom : str = None
+    name : str = None
