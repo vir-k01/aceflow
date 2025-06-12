@@ -1,17 +1,23 @@
 # aceflow
 
-(WIP) Wrapper for the pacemaker python package to use with jobflow for high-throughput training of ACE Machine Learning Interatomic Potentials.
+(WIP) Wrapper for the pacemaker and gracemaker python package to use with jobflow for high-throughput training of ACE-based Machine Learning Interatomic Potentials.
 
 Requirements:
 - jobflow
-- pymatgen == 2024.3.1
+- pymatgen
 - pandas
-- numpy == 1.26.4
-- atomate2 (from https://github.com/BryantLi-BLI/atomate2.git)
+- numpy
+- atomate2 (from https://github.com/vir-k01/atomate2.git for LAMMPS support)
 - python-ace (from https://github.com/ICAMS/python-ace.git)
-- TensotPotential (from https://github.com/ICAMS/TensorPotential.git)
-- tensorflow >= 2.8.0
+- TensorPotential (from https://github.com/ICAMS/TensorPotential.git)
+- Grace-tensorpotential (from  https://github.com/ICAMS/grace-tensorpotential.git)
+- tensorflow >= 2.16.2
 - ase (using ```pip install --upgrade git+https://gitlab.com/ase/ase.git@master```)
+
+Installation: 
+- Follow the instructions provided in [the gracemaker docs](https://gracemaker.readthedocs.io/en/latest/gracemaker/install/) to correctly install both the tensorflow and YAML based grace models. 
+- Optionally make LAMMPS with py-ace support
+- Then, clone this repo and run `pip install .' 
 
 Most of the code here is built on top of the functionality offerred by the pacemaker python package. The flows implememted are "naive", in the sense that they run a data generation step, write out the approprite inputs and then call pacemaker to do the actual training, followed by a series of active learning steps. A more streamlined training process entirely in python has to be implemented. For now, the goal of these flows is to provide a full end-to-end training pipeline for ACE potentials for bulk systems, requiring little to no user intervention. The trained potentials can then be fine-tuned to the problem of interest by providing appropriate data.
 

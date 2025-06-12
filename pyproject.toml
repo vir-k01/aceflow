@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aceflow"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
-  "tensorflow",
+  "tensorflow==2.16.2",
   "atomate2",
   "pymatgen",
   "fireworks",
   "mp_api"
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
   {name = "Vir Karan", email = "virkaran@berkeley.edu"},
 ]
