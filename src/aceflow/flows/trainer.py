@@ -13,6 +13,7 @@ import os
 import numpy as np
 from typing import Union, Dict
 
+_BASE_FOUNDATION_MODEL_PATH = "~/.cache/grace/checkpoints/GRACE-FS-OAM/"
 
 @dataclass
 class ACEMaker(Maker):
@@ -45,14 +46,16 @@ class ACEMaker(Maker):
             else:
                 raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
 
-        
+        if not self.loss_weights:
+            self.loss_weights = [0.99, 0.3] if isinstance(self.trainer_config, TrainConfig) else [5/6, 1/2]
+            
         for i, loss in enumerate(self.loss_weights):
             if isinstance(self.trainer_config, TrainConfig):
                 self.trainer_config.loss_weight = loss
             else:
-                self.trainer_config.energy_weight = 1-loss
-                self.trainer_config.forces_weight = loss
-                self.trainer_config.stress_weight = 1-loss
+                self.trainer_config.energy_weight = (1-loss)*6
+                self.trainer_config.forces_weight = loss*6
+                self.trainer_config.stress_weight = (1-loss)*6
 
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
@@ -110,7 +113,7 @@ class ProductionACEMaker(Maker):
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
     md_maker : MDMaker = None
-    loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
+    loss_weights : list = field(default_factory=[])
 
     def make(self, compositions: list = None, precomputed_data: Union[pd.DataFrame, str] = None, structures: list = None, pretrained_potential: Union[str, TrainedPotential] = None) -> Flow:
 
@@ -143,7 +146,6 @@ class ProductionACEMaker(Maker):
         consolidate_data_jobs.append(consolidate_data([data_output, precomputed_data]))
         data = consolidate_data_jobs[-1].output.acedata
 
-
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
                 if isinstance(self.trainer_config, TrainConfig):
@@ -156,13 +158,16 @@ class ProductionACEMaker(Maker):
             else:
                 raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.") 
 
+        if not self.loss_weights:
+            self.loss_weights = [0.99, 0.3] if isinstance(self.trainer_config, TrainConfig) else [5/6, 1/2]
+        
         for i, loss in enumerate(self.loss_weights):
             if isinstance(self.trainer_config, TrainConfig):
                 self.trainer_config.loss_weight = loss
             else:
-                self.trainer_config.energy_weight = 1-loss
-                self.trainer_config.forces_weight = loss
-                self.trainer_config.stress_weight = 1-loss
+                self.trainer_config.energy_weight = (1-loss)*6
+                self.trainer_config.forces_weight = loss*6
+                self.trainer_config.stress_weight = (1-loss)*6
 
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
@@ -282,6 +287,73 @@ class HeirarchicalACEMaker(ACEMaker):
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"
+
+        job_list.extend(trainers)
+        job_list.extend(train_checkers)
+        return Flow(job_list, output=train_checkers[-1].output, name=self.name)
+    
+    
+@dataclass
+class GraceFinetuneMaker(ACEMaker):
+    name : str = 'Grace Finetune Maker'
+    trainer_config : GraceConfig = field(default_factory=lambda: GraceConfig())
+    active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
+    static_maker : StaticMaker = None
+    loss_weights : list = field(default_factory=lambda: [5])
+
+    def make(self, 
+             data: Union[str, pd.DataFrame], 
+             pretrained_potential: Union[str, TrainedPotential] = None,
+             compositions: list = None) -> Flow:
+        
+        active_set_flows = []
+        consolidate_data_jobs = []
+        job_list = []
+        trainers = []
+        train_checkers = []
+        
+        if pretrained_potential:
+            if isinstance(pretrained_potential, str):
+                if isinstance(self.trainer_config, GraceConfig):
+                    trained_potential = GraceModel.from_dir(pretrained_potential)
+
+            if isinstance(pretrained_potential, GraceModel):
+                trained_potential = pretrained_potential
+            else:
+                raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
+        else:
+            trained_potential = TrainedPotential.from_dir(_BASE_FOUNDATION_MODEL_PATH) #TODO: Make this load foundation model
+        
+        if data:
+            consolidate_data_jobs.append(consolidate_data([data]))
+            data = consolidate_data_jobs[-1].output.acedata
+        
+        if self.active_learning_config.active_learning_loops:
+            for i in range(self.active_learning_config.active_learning_loops):
+                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, 
+                                                            active_learning_config=self.active_learning_config).make(compositions, 
+                                                                                                                     trained_potential=train_checkers[-1].output.trained_potential)
+                active_set_flows.append(active_set_flow)
+                if consolidate_data_jobs:
+                    consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output.acedata, 
+                                                                   active_set_flow.output]))
+                else:
+                    consolidate_data_jobs.append(consolidate_data([active_set_flow.output]))
+      
+                for j, loss in enumerate(self.loss_weights):
+                    self.trainer_config.loss_weight = loss
+                    trained_potential = train_checkers[-1].output.trained_potential
+                    self.trainer_config.name = f"Active Step {i}.{j} Trainer, Loss Weight: {self.loss_weights[j]}"
+                    trainers.append(naive_train_grace(computed_data_set=consolidate_data_jobs[-1].output, 
+                                                      trainer_config=self.trainer_config, 
+                                                      trained_potential=trained_potential))
+                    trainers[-1].name = self.trainer_config.name
+                    train_checkers.append(check_training_output(trainers[-1].output, 
+                                                                trainer_config=self.trainer_config))
+                    train_checkers[-1].name = self.trainer_config.name + " Checker"
+
+            job_list.extend(active_set_flows)
+        job_list.extend(consolidate_data_jobs)
 
         job_list.extend(trainers)
         job_list.extend(train_checkers)

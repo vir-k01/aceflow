@@ -119,8 +119,8 @@ class ActiveStructuresFlowMaker(Maker):
         
         if self.static_maker is None:
             self.static_maker = StaticMaker()
-            #self.static_maker = update_user_incar_settings(self.static_maker, self.data_gen_config.incar_updates)
-            #self.static_maker = update_user_kpoints_settings(self.static_maker, self.data_gen_config.kpoints)
+            #self.static_maker = update_user_incar_settings(self.static_maker, DataGenConfig().incar_updates)
+            #self.static_maker = update_user_kpoints_settings(self.static_maker, DataGenConfig().kpoints)
         static_jobs = deferred_static_from_list(self.static_maker, structures)
         output_reader = read_statics_outputs(static_jobs.output)
         output_reader.config.on_missing_references = OnMissing.NONE

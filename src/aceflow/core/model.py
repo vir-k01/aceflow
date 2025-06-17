@@ -83,9 +83,13 @@ class GraceModel(MSONable):
             model.status = 'incomplete'
                     
         if 'FS' in model.trainer_config.finetune_foundation_model or model.trainer_config.preset == 'FS':
-            subprocess.run(f"gracemaker -r -s -sf")
+            if not os.path.isfile(os.path.join(model.train_dir, 'FS_model.yaml')):
+                subprocess.run(f"gracemaker -r -s -sf")
             model.final_model = os.path.join(model.train_dir, 'FS_model.yaml')
-            subprocess.run(f"pace_activeset -d {train_dir}/training_set.pkl.gz {model.final_model_yaml}")
+            if not os.path.isfile(os.path.join(model.train_dir, 'FS_model.asi')):
+                subprocess.run(f"pace_activeset -d {train_dir}/training_set.pkl.gz {model.final_model}")
+            else:
+                model.final_model = os.path.join(model.train_dir, 'FS_model.yaml')
             model.active_set_file = os.path.join(model.train_dir, 'FS_model.asi')
         else:
             subprocess.run(f"gracemaker -r -s")
