@@ -7,6 +7,9 @@ from aceflow.utils.config import TrainConfig, GraceConfig
 import pandas as pd
 import subprocess
 from monty.serialization import loadfn
+from typing import Literal
+from pathlib import Path
+import importlib.resources as pkg_resources
 
 @dataclass
 class TrainedPotential(MSONable):
@@ -96,3 +99,16 @@ class GraceModel(MSONable):
             model.final_model = os.path.join(model.train_dir, 'saved_model')
         
         return model
+    
+    @classmethod
+    def get_pretrained_model(cls, model_name: Literal["GRACE-FS-MATPES", "GRACE-1L-OAM", "GRACE-2L-OAM"]):
+
+        ref_objects_path = Path(pkg_resources.files("aceflow")) / "reference_objects"
+        
+        if model_name == "GRACE-FS-MATPES":
+            model = str(ref_objects_path / f"{model_name}.yaml")
+            asi = str(ref_objects_path / f"{model_name}.asi")
+        else:
+            raise ValueError(f"Model {model_name} has not been implemented yet!")
+
+        return cls(final_model=model, active_set_file=asi)
