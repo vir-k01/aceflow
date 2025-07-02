@@ -8,9 +8,9 @@ from atomate2.vasp.sets.core import MDSetGenerator
 from atomate2.vasp.jobs.core import StaticMaker
 from atomate2.vasp.powerups import update_user_incar_settings, update_user_kpoints_settings
 from dataclasses import dataclass, field
-from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs
+from aceflow.jobs.data import test_potential_in_restricted_space, deferred_static_from_list, read_statics_outputs, read_MD_outputs, test_grace_potential_in_restricted_space
 from aceflow.utils.config import DataGenConfig, ActiveLearningConfig
-from aceflow.core.model import TrainedPotential
+from aceflow.core.model import TrainedPotential, GraceModel
 from aceflow.active_learning.core import RandomPackedSampler, HighTempMDSampler
 from aceflow.active_learning.base import BaseActiveLearningStrategy
 from pymatgen.core import Composition
@@ -100,7 +100,7 @@ class ActiveStructuresFlowMaker(Maker):
     static_maker : Maker = None
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
   
-    def make(self, compositions: list[Union[str, Composition]], trained_potential: TrainedPotential):
+    def make(self, compositions: list[Union[str, Composition]], trained_potential: TrainedPotential | GraceModel):
         
         if not self.active_learning_config.sampling_strategy:
             self.active_learning_config.sampling_strategy = RandomPackedSampler()
@@ -114,7 +114,10 @@ class ActiveStructuresFlowMaker(Maker):
             for strategy in self.active_learning_config.sampling_strategy:
                 strategy.gamma_low = self.active_learning_config.gamma_low
                 strategy.gamma_high = self.active_learning_config.gamma_high
-                active_structures = test_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
+                if isinstance(trained_potential, GraceModel):
+                    active_structures = test_grace_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
+                else:
+                    active_structures = test_potential_in_restricted_space(trained_potential, compositions, sampling_strategy=strategy)
                 structures.append(active_structures.output.acedata)
         
         if self.static_maker is None:
