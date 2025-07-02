@@ -13,6 +13,7 @@ from aceflow.active_learning.base import BaseActiveLearningStrategy
 from pymatgen.core.structure import Structure
 import pandas as pd
 import os
+import warnings
 
 @job(acedata='acedata', output_schema=ACEDataTaskDoc)
 def read_MD_outputs(md_outputs: List = None, step_skip: int = 1):
@@ -167,11 +168,12 @@ def test_potential_in_restricted_space(trained_potential: Union[TrainedPotential
 def test_grace_potential_in_restricted_space(trained_potential: Union[GraceModel, str], compositions: list, sampling_strategy: BaseActiveLearningStrategy = None, active_set_file: str = None):
     
     if isinstance(trained_potential, GraceModel):
-        potential_file = trained_potential.model_yaml
+        potential_file = trained_potential.model_yaml or trained_potential.final_model
         active_set = trained_potential.active_set_file
     if isinstance(trained_potential, str):
         potential_file = trained_potential
         if not active_set_file:
+            warnings.warn("No active set file provided. Assuming the active set name/path is the same as the potential file.")
             active_set = potential_file.replace(".yaml", ".asi")
         else:
             active_set = active_set_file

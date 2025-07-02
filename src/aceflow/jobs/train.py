@@ -54,7 +54,7 @@ def naive_train_ACE(computed_data_set : Union[dict, pd.DataFrame, str] = None, t
 
 @job(output_schema=ACETrainerTaskDoc)
 def check_training_output(prev_run_dir: str, 
-                          trainer_config: TrainConfig | GraceConfig = None) -> TrainedPotential | GraceModel:
+                          trainer_config: TrainConfig | GraceConfig = None) -> TrainedPotential | GraceModel | Response:
     
     if isinstance(trainer_config, TrainConfig):
         trained_potential = TrainedPotential.from_dir(prev_run_dir)

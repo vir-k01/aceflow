@@ -12,14 +12,14 @@ import pandas as pd
 import os
 import numpy as np
 from typing import Union, Dict
-
-_BASE_FOUNDATION_MODEL_PATH = "~/.cache/grace/checkpoints/GRACE-FS-OAM/"
+from aceflow.active_learning.core import HighTempMDSampler
+from aceflow.active_learning.base import BaseActiveLearningStrategy
 
 @dataclass
 class ACEMaker(Maker):
     name : str = 'ACE Maker'
     trainer_config : TrainConfig | GraceConfig = field(default_factory=lambda: TrainConfig())
-    loss_weights : list = field(default_factory=lambda: [0.99, 0.3])
+    loss_weights : list[dict] = field(default_factory=lambda: [{'forces_weight': 0.99}, {'forces_weight': 0.3}])
 
     def make(self, 
              data: Union[pd.DataFrame, str], 
@@ -47,16 +47,15 @@ class ACEMaker(Maker):
                 raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
 
         if not self.loss_weights:
-            self.loss_weights = [0.99, 0.3] if isinstance(self.trainer_config, TrainConfig) else [5/6, 1/2]
+            self.loss_weights = [{'forces_weight': 0.99}, {'forces_weight': 0.3}] if isinstance(self.trainer_config, TrainConfig) else [{'energy_weight': 1, 'forces_weight': 5, 'stress_weight': 1}]
             
-        for i, loss in enumerate(self.loss_weights):
+        for i, loss_dict in enumerate(self.loss_weights):
             if isinstance(self.trainer_config, TrainConfig):
-                self.trainer_config.loss_weight = loss
+                self.trainer_config.loss_weight = loss_dict['forces_weight'] or loss_dict['energy_weight']
             else:
-                self.trainer_config.energy_weight = (1-loss)*6
-                self.trainer_config.forces_weight = loss*6
-                self.trainer_config.stress_weight = (1-loss)*6
-
+                self.trainer_config.energy_weight = loss_dict['energy_weight']
+                self.trainer_config.forces_weight = loss_dict['forces_weight']
+                self.trainer_config.stress_weight = loss_dict['stress_weight']
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
             self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}"
@@ -69,7 +68,6 @@ class ACEMaker(Maker):
                                                   trainer_config=self.trainer_config, 
                                                   trained_potential=trained_potential,
                                                   ))
-            print(trainers[-1])
             trainers[-1].name = self.trainer_config.name
             train_checkers.append(check_training_output(trainers[-1].output, trainer_config=self.trainer_config))
             train_checkers[-1].name = self.trainer_config.name + " Checker"
@@ -299,10 +297,10 @@ class GraceFinetuneMaker(ACEMaker):
     trainer_config : GraceConfig = field(default_factory=lambda: GraceConfig())
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
-    loss_weights : list = field(default_factory=lambda: [5])
+    loss_weights : list[dict] = field(default_factory=lambda: [{"energy_weight": 5, "forces_weight": 1}])
 
     def make(self, 
-             data: Union[str, pd.DataFrame], 
+             data: Union[str, pd.DataFrame] = None, 
              pretrained_potential: Union[str, TrainedPotential] = None,
              compositions: list = None) -> Flow:
         
@@ -322,17 +320,26 @@ class GraceFinetuneMaker(ACEMaker):
             else:
                 raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
         else:
-            trained_potential = TrainedPotential.from_dir(_BASE_FOUNDATION_MODEL_PATH) #TODO: Make this load foundation model
+            trained_potential = GraceModel.get_pretrained_model("GRACE-FS-MATPES")
         
+        if not (data or self.active_learning_config.active_learning_loops):
+            raise ValueError("No data or active learning loops provided. At least one of the two must be provided.")
+        
+        if not self.active_learning_config.sampling_strategy:
+            self.active_learning_config.sampling_strategy = [HighTempMDSampler()]
+            
+        if isinstance(self.active_learning_config.sampling_strategy, BaseActiveLearningStrategy):
+            self.active_learning_config.sampling_strategy = [self.active_learning_config.sampling_strategy]
+            
         if data:
             consolidate_data_jobs.append(consolidate_data([data]))
             data = consolidate_data_jobs[-1].output.acedata
         
         if self.active_learning_config.active_learning_loops:
             for i in range(self.active_learning_config.active_learning_loops):
-                active_set_flow = ActiveStructuresFlowMaker(static_maker=self.static_maker, 
-                                                            active_learning_config=self.active_learning_config).make(compositions, 
-                                                                                                                     trained_potential=train_checkers[-1].output.trained_potential)
+                active_set_flow_maker = ActiveStructuresFlowMaker(static_maker=self.static_maker, 
+                                                            active_learning_config=self.active_learning_config)
+                active_set_flow = active_set_flow_maker.make(compositions, trained_potential)
                 active_set_flows.append(active_set_flow)
                 if consolidate_data_jobs:
                     consolidate_data_jobs.append(consolidate_data([consolidate_data_jobs[-1].output.acedata, 
@@ -341,8 +348,12 @@ class GraceFinetuneMaker(ACEMaker):
                     consolidate_data_jobs.append(consolidate_data([active_set_flow.output]))
       
                 for j, loss in enumerate(self.loss_weights):
-                    self.trainer_config.loss_weight = loss
-                    trained_potential = train_checkers[-1].output.trained_potential
+                    self.trainer_config.energy_weight = loss.get('energy_weight', None)
+                    self.trainer_config.forces_weight = loss.get('forces_weight', None)
+                    self.trainer_config.stress_weight = loss.get('stress_weight', None)
+                    
+                    if train_checkers:
+                        trained_potential = train_checkers[-1].output.trained_potential
                     self.trainer_config.name = f"Active Step {i}.{j} Trainer, Loss Weight: {self.loss_weights[j]}"
                     trainers.append(naive_train_grace(computed_data_set=consolidate_data_jobs[-1].output, 
                                                       trainer_config=self.trainer_config, 
