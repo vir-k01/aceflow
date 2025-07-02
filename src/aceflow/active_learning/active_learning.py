@@ -5,6 +5,7 @@ from pyace import BBasisConfiguration, ACEBBasisSet, aseatoms_to_atomicenvironme
 from pyace.activelearning import compute_B_projections, compute_active_set, compute_active_set_by_batches, \
     compute_A_active_inverse, compute_number_of_functions, \
     count_number_total_atoms_per_species_type, save_active_inverse_set
+from pyace.grace_fs import GRACEFSBasisSet
 
 from pyace.aceselect import compute_mem_limit, compute_batch_size, compute_required_memory, select_structures_maxvol
 
@@ -98,7 +99,11 @@ def select_structures_with_active_set(potential_file: str, active_set: str, data
     elements = sorted(asi_data.keys())
     asi_dict = {i: asi_data[el] for i, el in enumerate(elements)}
 
-    bconf = BBasisConfiguration(potential_file)
+    try:
+        bconf = BBasisConfiguration(potential_file)
+    except:
+        bconf = GRACEFSBasisSet(potential_file)
+
     extra_A0_projections_dict = compute_A_active_inverse(asi_dict)
     df_selected = select_structures_maxvol(dataset, bconf, extra_A0_projections_dict, max_structures=max_structures)
     return df_selected
