@@ -38,7 +38,7 @@ potential:
 ######################
 fit:
   loss: {
-    energy: { type: huber, weight: $energy_weight,  delta: 0.1  }, # or { type: square, weight: 1} 
+    energy: { type: huber, weight: $energy_weight,  delta: 0.01 }, # or { type: square, weight: 1} 
     forces: { type: huber, weight: $forces_weight, delta: 0.01 }, 
     $stress_control stress: { type: huber, weight: $stress_weight, delta: 0.01},   #
   }

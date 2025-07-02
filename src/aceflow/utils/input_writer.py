@@ -332,11 +332,15 @@ def write_grace_input(trainer_config : GraceConfig, reference_energy_dict: dict 
   
   subs_dict.update({f'{k}_control': '#' for k in ['stress', 'kwargs', 'custom', 'filename', 'checkpoint_name']})
   
+  if trainer_config.preset:
+    subs_dict.update({'preset_control': 'preset'})
+  
   if trainer_config.finetune_foundation_model:
     template = Template(open(os.path.join(CWD, "reference_objects/grace_finetune_template.yaml")).read())
   else:
     trainer_config.preset_kwargs = trainer_config.preset_kwargs if trainer_config.preset_kwargs else {}
-    subs_dict.update({'kwargs_control' : ''})
+    if trainer_config.preset_kwargs:
+      subs_dict.update({'kwargs_control' : ''}) 
     
     if trainer_config.cutoff == 'n/a':
       if trainer_config.preset == 'FS':
@@ -359,7 +363,7 @@ def write_grace_input(trainer_config : GraceConfig, reference_energy_dict: dict 
     template = Template(open(os.path.join(CWD, "reference_objects/grace_template.yaml")).read())
   
   dumpfn(trainer_config.as_dict(), 'trainer_config.yaml')
-  content = template.substitute(subs_dict)
+  content = template.safe_substitute(subs_dict)
   with open("input.yaml", 'w') as file:
       file.write(content)
     

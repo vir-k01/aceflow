@@ -107,4 +107,5 @@ class GraceConfig(MSONable):
     filename : str = None
     checkpoint_name : str = None
     custom : str = None
+    elements : list = None
     name : str = None

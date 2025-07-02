@@ -19,10 +19,11 @@ from aceflow.active_learning.base import BaseActiveLearningStrategy
 class ACEMaker(Maker):
     name : str = 'ACE Maker'
     trainer_config : TrainConfig | GraceConfig = field(default_factory=lambda: TrainConfig())
-    loss_weights : list[dict] = field(default_factory=lambda: [{'forces_weight': 0.99}, {'forces_weight': 0.3}])
+    loss_weights : list[dict] | None = field(default = None)
 
     def make(self, 
              data: Union[pd.DataFrame, str], 
+             chemsys: list = None,
              pretrained_potential: Union[str, TrainedPotential, GraceModel] = None) -> Flow:
         
         trainers = []
@@ -31,8 +32,10 @@ class ACEMaker(Maker):
         trained_potential = None
 
         if isinstance(self.trainer_config, TrainConfig):
-            if self.trainer_config.chemsys is None:
+            if self.trainer_config.chemsys is None and chemsys is None:
                 raise ValueError("Chemical system must be provided in the trainer config.")
+            if chemsys:
+                self.trainer_config.chemsys = chemsys
 
         if pretrained_potential:
             if isinstance(pretrained_potential, str):
@@ -47,15 +50,15 @@ class ACEMaker(Maker):
                 raise ValueError("Pretrained potential must be a path to the training directory or an instance of the TrainedPotential or GraceModel class.")
 
         if not self.loss_weights:
-            self.loss_weights = [{'forces_weight': 0.99}, {'forces_weight': 0.3}] if isinstance(self.trainer_config, TrainConfig) else [{'energy_weight': 1, 'forces_weight': 5, 'stress_weight': 1}]
+            self.loss_weights = [{'forces_weight': 0.99}, {'forces_weight': 0.3}] if isinstance(self.trainer_config, TrainConfig) else [{'energy_weight': 1, 'forces_weight': 5, 'stress_weight': None}]
             
         for i, loss_dict in enumerate(self.loss_weights):
             if isinstance(self.trainer_config, TrainConfig):
                 self.trainer_config.loss_weight = loss_dict['forces_weight'] or loss_dict['energy_weight']
             else:
-                self.trainer_config.energy_weight = loss_dict['energy_weight']
-                self.trainer_config.forces_weight = loss_dict['forces_weight']
-                self.trainer_config.stress_weight = loss_dict['stress_weight']
+                self.trainer_config.energy_weight = loss_dict.get('energy_weight', None)
+                self.trainer_config.forces_weight = loss_dict.get('forces_weight', None)
+                self.trainer_config.stress_weight = loss_dict.get('stress_weight', None)
             if i:
                 trained_potential = train_checkers[-1].output.trained_potential
             self.trainer_config.name = f"Step 0.{i} Trainer, Loss Weight: {self.loss_weights[i]}"
@@ -297,7 +300,7 @@ class GraceFinetuneMaker(ACEMaker):
     trainer_config : GraceConfig = field(default_factory=lambda: GraceConfig())
     active_learning_config : ActiveLearningConfig = field(default_factory=lambda: ActiveLearningConfig())
     static_maker : StaticMaker = None
-    loss_weights : list[dict] = field(default_factory=lambda: [{"energy_weight": 5, "forces_weight": 1}])
+    loss_weights : list[dict] = field(default_factory=lambda: [{"energy_weight": 1, "forces_weight": 5}])
 
     def make(self, 
              data: Union[str, pd.DataFrame] = None, 
