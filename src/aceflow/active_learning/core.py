@@ -36,7 +36,7 @@ class HighTempMDSampler(BaseActiveLearningStrategy):
 
     def sample_structures(self, compositions):
 
-        structures = [get_random_packed_structure(composition, vol_exp=1.2, target_atoms=self.target_atoms) for composition in compositions]
+        structures = [get_random_packed_structure(composition, target_atoms=self.target_atoms) for composition in compositions]
         with MPRester() as mpr:
             entries = mpr.get_entries(compositions, inc_structure=True, additional_criteria={"is_stable": True, "energy_above_hull": (0, 1)})
         structures.extend([entry.structure.make_supercell(2, 2, 2) if len(entry.structure) < 50 else entry.structure for entry in entries])
