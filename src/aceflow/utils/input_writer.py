@@ -330,7 +330,7 @@ def write_grace_input(trainer_config : GraceConfig, reference_energy_dict: dict 
   
   subs_dict = trainer_config.__dict__.copy()
   
-  subs_dict.update({f'{k}_control': '#' for k in ['stress', 'kwargs', 'custom', 'filename', 'checkpoint_name', 'preset']})
+  subs_dict.update({f'{k}_control': '#' for k in ['stress', 'kwargs', 'custom', 'filename', 'checkpoint_name']})
   
   if trainer_config.finetune_foundation_model:
     template = Template(open(os.path.join(CWD, "reference_objects/grace_finetune_template.yaml")).read())
