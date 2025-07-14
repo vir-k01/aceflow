@@ -41,16 +41,27 @@ class TrainedPotential(MSONable):
                 raise FileNotFoundError("No dataset found in the training directory.")
         
         if os.path.isfile(train_dir + '/output_potential.yaml'):
-            output_potential = cls.read_potential(train_dir + '/output_potential.yaml')
+            output_potential = cls.read_potential(cls, train_dir + '/output_potential.yaml')
             status = 'complete'
-            active_set_file = get_active_set(train_dir + '/output_potential.yaml', dataset=dataset, is_full=False)
+            if os.path.isfile(train_dir + '/output_potential.asi'):
+                active_set_file = train_dir + '/output_potential.asi'
+            else:   
+                active_set_file = get_active_set(train_dir + '/output_potential.yaml', dataset=dataset, is_full=False)
         else:
             status = 'incomplete'
-            active_set_file = get_active_set(train_dir + '/interim_potential_0.yaml', dataset=dataset, is_full=False)
+            if os.path.isfile(train_dir + '/interim_potential_0.asi'):
+                active_set_file = train_dir + '/interim_potential_0.asi'
+            else:
+                active_set_file = get_active_set(train_dir + '/interim_potential_0.yaml', dataset=dataset, is_full=False)
         
-        interim_potential = cls.read_potential(train_dir + '/interim_potential_0.yaml')
+        interim_potential = cls.read_potential(cls, train_dir + '/interim_potential_0.yaml')
     
-        return cls(train_dir=train_dir, status=status, active_set_file=active_set_file, interim_potential=interim_potential)
+        return cls(train_dir=train_dir, 
+                   status=status, 
+                   active_set_file=active_set_file, 
+                   interim_potential=interim_potential, 
+                   output_potential=output_potential if output_potential else None,
+                   )
 
 @dataclass
 class GraceModel(MSONable):
