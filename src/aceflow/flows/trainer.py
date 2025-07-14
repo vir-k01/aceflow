@@ -354,6 +354,8 @@ class GraceFinetuneMaker(ACEMaker):
                     self.trainer_config.energy_weight = loss.get('energy_weight', None)
                     self.trainer_config.forces_weight = loss.get('forces_weight', None)
                     self.trainer_config.stress_weight = loss.get('stress_weight', None)
+
+                    self.trainer_config.filename = trained_potential.model_yaml
                     
                     if train_checkers:
                         trained_potential = train_checkers[-1].output.trained_potential
