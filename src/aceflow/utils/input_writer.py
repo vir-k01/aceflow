@@ -333,7 +333,7 @@ def write_grace_input(trainer_config : GraceConfig, reference_energy_dict: dict 
   subs_dict.update({f'{k}_control': '#' for k in ['stress', 'kwargs', 'custom', 'filename', 'checkpoint_name']})
   
   if trainer_config.preset:
-    subs_dict.update({'preset_control': 'preset'})
+    subs_dict.update({'preset_control': ''})
   
   if trainer_config.finetune_foundation_model:
     template = Template(open(os.path.join(CWD, "reference_objects/grace_finetune_template.yaml")).read())
@@ -354,12 +354,16 @@ def write_grace_input(trainer_config : GraceConfig, reference_energy_dict: dict 
       
     subs_dict.update({'cutoff': trainer_config.cutoff})
     subs_dict.update({'kwargs': trainer_config.preset_kwargs})
-    if trainer_config.preset == 'custom':
-      if trainer_config.filename and trainer_config.checkpoint_name:
-        subs_dict.update({'filename_control': '', 'checkpoint_name_control': '', 'custom_control': ''})
-      else:
-        raise ValueError("Filename and checkpoint name must be provided for custom model.")
-      
+    if trainer_config.filename: 
+      subs_dict.update({'filename': trainer_config.filename,
+                        'filename_control': ''})
+    if trainer_config.checkpoint_name:
+      subs_dict.update({'checkpoint_name': trainer_config.checkpoint_name,
+                        'checkpoint_name_control': ''})
+    if trainer_config.custom:
+      subs_dict.update({'custom': trainer_config.custom,
+                        'custom_control': ''})
+    
     template = Template(open(os.path.join(CWD, "reference_objects/grace_template.yaml")).read())
   
   dumpfn(trainer_config.as_dict(), 'trainer_config.yaml')
